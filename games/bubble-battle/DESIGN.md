@@ -73,6 +73,12 @@ components:
     typography: "{typography.label-caps}"
     rounded: "{rounded.pill}"
     padding: 8px
+  power-up-chip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.primary}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.pill}"
+    padding: 8px
   focus-ring:
     backgroundColor: "{colors.focus}"
     size: 4px
@@ -80,7 +86,7 @@ components:
 
 ## Overview
 
-Bubble Battle should feel energetic, friendly, and immediately readable. Deep navy contains the action while cyan, pink, and gold identify interaction, rivalry, and rewards. This is a provisional direction for the game while its current page remains a preview shell.
+Bubble Battle should feel energetic, friendly, and immediately readable. Deep navy contains the action while cyan, pink, and gold identify interaction, rivalry, rewards, and temporary power-up states.
 
 ## Colors
 
@@ -105,6 +111,8 @@ Prefer circles, pills, and generous rounded rectangles. Preserve a crisp silhoue
 ## Components
 
 Primary actions use cyan pills; competitive states use pink; rewards use gold. Panels use pale surfaces on the navy game shell. Focus indicators must stay visible against both light panels and the dark playfield.
+
+Power-up status uses compact pill chips over the playfield. Every chip combines a label with a countdown or action key so color is never the only status signal.
 
 ## Do's and Don'ts
 

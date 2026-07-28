@@ -37,6 +37,8 @@ test("server-renders the bubble battle game", async () => {
   assert.match(html, /泡泡堂/);
   assert.match(html, /进入街区/);
   assert.match(html, /放泡泡/);
+  assert.match(html, /护盾层数/);
+  assert.match(html, /遥控起爆/);
 });
 
 test("contains game-specific metadata without starter artifacts", async () => {

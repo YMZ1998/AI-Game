@@ -363,6 +363,14 @@ button {
   background: #7766ef;
 }
 
+.ability-icon.shield {
+  background: #2563eb;
+}
+
+.ability-icon.remote {
+  background: #ff5f87;
+}
+
 .best {
   padding: 14px;
   border-radius: 16px;
@@ -408,6 +416,44 @@ button {
   position: relative;
   overflow: hidden;
   background: #44c7e6;
+}
+
+.effect-chips {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  pointer-events: none;
+}
+
+.effect-chips span {
+  padding: 7px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  color: #0b1026;
+  background: #f7fbff;
+  box-shadow: 0 5px 14px rgba(11, 16, 38, 0.16);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.effect-chips .freeze {
+  color: #12537a;
+  background: #e8f7ff;
+}
+
+.effect-chips .magnet {
+  color: #7c2057;
+  background: #ffe8f2;
+}
+
+.effect-chips .remote {
+  color: #7c1938;
+  background: #ffdce7;
 }
 
 canvas {
@@ -782,6 +828,7 @@ kbd {
   }
 
   .d-pad button,
+  .remote-button,
   .bubble-button {
     border: 0;
     color: white;
@@ -832,6 +879,36 @@ kbd {
     background: #ff506c;
     box-shadow: 0 7px 0 #bd2547;
     font-size: 11px;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .remote-button {
+    width: 54px;
+    height: 66px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 18px;
+    background: #ff5f87;
+    box-shadow: 0 5px 0 #b92a55;
+    font-size: 20px;
+  }
+
+  .remote-button small {
+    font-size: 9px;
+  }
+
+  .remote-button:disabled {
+    color: #7293a2;
+    background: #cce6ec;
+    box-shadow: 0 5px 0 #9fc7d1;
   }
 
   .bubble-button span {

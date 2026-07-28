@@ -17,7 +17,16 @@ const ROUND_SECONDS = 120;
 
 type Status = "ready" | "playing" | "levelComplete" | "gameOver";
 type Direction = "up" | "down" | "left" | "right";
-type PowerType = "speed" | "range" | "bubble";
+type PowerType =
+  | "speed"
+  | "range"
+  | "bubble"
+  | "shield"
+  | "clock"
+  | "freeze"
+  | "remote"
+  | "magnet"
+  | "heal";
 
 type Actor = {
   x: number;
@@ -34,6 +43,7 @@ type Bomb = {
   row: number;
   fuse: number;
   range: number;
+  remote: boolean;
 };
 
 type Flame = {
@@ -63,6 +73,10 @@ type Runtime = {
   timeLeft: number;
   bombRange: number;
   maxBombs: number;
+  shield: number;
+  freezeTimer: number;
+  magnetTimer: number;
+  remoteCharges: number;
   invulnerable: number;
   lastTime: number;
   nextBombId: number;
@@ -78,6 +92,11 @@ type Hud = {
   range: number;
   bubbles: number;
   enemies: number;
+  shield: number;
+  freeze: number;
+  magnet: number;
+  remoteCharges: number;
+  remoteBombs: number;
 };
 
 const directions: Record<Direction, { x: number; y: number }> = {
@@ -85,6 +104,34 @@ const directions: Record<Direction, { x: number; y: number }> = {
   down: { x: 0, y: 1 },
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
+};
+
+const powerDropPool: PowerType[] = [
+  "range",
+  "range",
+  "speed",
+  "speed",
+  "bubble",
+  "bubble",
+  "shield",
+  "shield",
+  "clock",
+  "freeze",
+  "remote",
+  "magnet",
+  "heal",
+];
+
+const powerVisuals: Record<PowerType, { color: string; symbol: string }> = {
+  speed: { color: "#23C6D9", symbol: "⚡" },
+  range: { color: "#FF5F87", symbol: "↔" },
+  bubble: { color: "#7868f2", symbol: "●" },
+  shield: { color: "#2563EB", symbol: "◇" },
+  clock: { color: "#F6C453", symbol: "+15" },
+  freeze: { color: "#65c9ff", symbol: "❄" },
+  remote: { color: "#FF5F87", symbol: "R" },
+  magnet: { color: "#e54b9a", symbol: "U" },
+  heal: { color: "#ff4567", symbol: "♥" },
 };
 
 const spawnSafe = new Set([
@@ -177,6 +224,10 @@ function createRuntime(level = 1, score = 0, lives = 3): Runtime {
     timeLeft: Math.max(75, ROUND_SECONDS - (level - 1) * 8),
     bombRange: 2,
     maxBombs: 1,
+    shield: 0,
+    freezeTimer: 0,
+    magnetTimer: 0,
+    remoteCharges: 0,
     invulnerable: 0,
     lastTime: 0,
     nextBombId: 1,
@@ -337,11 +388,23 @@ function drawActor(
   time: number,
   player = false,
   faded = false,
+  shield = 0,
+  frozen = false,
 ) {
   const bounce = Math.sin(time * 7 + actor.x * 0.01) * 1.6;
   context.save();
   context.translate(actor.x, actor.y + bounce);
   if (faded) context.globalAlpha = 0.36 + Math.sin(time * 18) * 0.22;
+
+  if (shield > 0) {
+    context.strokeStyle = shield > 1 ? "#F6C453" : "#23C6D9";
+    context.lineWidth = 4;
+    context.globalAlpha = faded ? 0.45 : 0.82;
+    context.beginPath();
+    context.arc(0, -2, 31 + Math.sin(time * 5) * 1.5, 0, Math.PI * 2);
+    context.stroke();
+    context.globalAlpha = faded ? 0.5 : 1;
+  }
 
   context.fillStyle = "rgba(18,83,110,.2)";
   context.beginPath();
@@ -388,6 +451,13 @@ function drawActor(
     context.beginPath();
     context.arc(-12, -14, 5, 0, Math.PI * 2);
     context.fill();
+    if (frozen) {
+      context.globalAlpha = 1;
+      context.fillStyle = "#dff8ff";
+      context.font = "900 15px Arial";
+      context.textAlign = "center";
+      context.fillText("❄", 14, -18);
+    }
   }
   context.restore();
 }
@@ -419,10 +489,21 @@ function drawBomb(
   context.arc(-6, -5, 11, Math.PI, Math.PI * 1.55);
   context.stroke();
   context.globalAlpha = 1;
-  context.fillStyle = bomb.fuse < 0.65 ? "#ff3d5d" : "#fff169";
+  context.fillStyle = bomb.remote
+    ? "#FF5F87"
+    : bomb.fuse < 0.65
+      ? "#ff3d5d"
+      : "#fff169";
   context.beginPath();
   context.arc(10, -17, 5, 0, Math.PI * 2);
   context.fill();
+  if (bomb.remote) {
+    context.fillStyle = "#ffffff";
+    context.font = "900 13px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("R", 0, 2);
+  }
   context.restore();
 }
 
@@ -457,30 +538,22 @@ function drawPowerUp(
 ) {
   const x = tileCenter(powerUp.col);
   const y = tileCenter(powerUp.row) + Math.sin(time * 4 + powerUp.bob) * 4;
-  const color =
-    powerUp.type === "speed"
-      ? "#55e398"
-      : powerUp.type === "range"
-        ? "#ff775f"
-        : "#7f6fff";
+  const visual = powerVisuals[powerUp.type];
   context.save();
   context.translate(x, y);
-  context.shadowColor = color;
+  context.shadowColor = visual.color;
   context.shadowBlur = 16;
   context.fillStyle = "#ffffff";
   context.beginPath();
   context.arc(0, 0, 18, 0, Math.PI * 2);
   context.fill();
   context.shadowBlur = 0;
-  context.fillStyle = color;
-  context.font = "900 19px Arial";
+  context.fillStyle = visual.color;
+  context.font =
+    powerUp.type === "clock" ? "900 11px Arial" : "900 19px Arial";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(
-    powerUp.type === "speed" ? "⚡" : powerUp.type === "range" ? "↔" : "●",
-    0,
-    1,
-  );
+  context.fillText(visual.symbol, 0, 1);
   context.restore();
 }
 
@@ -491,13 +564,24 @@ function drawScene(context: CanvasRenderingContext2D, runtime: Runtime) {
     drawPowerUp(context, powerUp, time),
   );
   runtime.bombs.forEach((bomb) => drawBomb(context, bomb, time));
-  runtime.enemies.forEach((enemy) => drawActor(context, enemy, time));
+  runtime.enemies.forEach((enemy) =>
+    drawActor(
+      context,
+      enemy,
+      time,
+      false,
+      false,
+      0,
+      runtime.freezeTimer > 0,
+    ),
+  );
   drawActor(
     context,
     runtime.player,
     time,
     true,
     runtime.invulnerable > 0,
+    runtime.shield,
   );
   drawFlames(context, runtime.flames);
 }
@@ -524,6 +608,11 @@ export default function Home() {
     range: 2,
     bubbles: 1,
     enemies: 3,
+    shield: 0,
+    freeze: 0,
+    magnet: 0,
+    remoteCharges: 0,
+    remoteBombs: 0,
   });
 
   const syncHud = useCallback(() => {
@@ -537,6 +626,11 @@ export default function Home() {
       range: runtime.bombRange,
       bubbles: runtime.maxBombs,
       enemies: runtime.enemies.length,
+      shield: runtime.shield,
+      freeze: Math.ceil(runtime.freezeTimer),
+      magnet: Math.ceil(runtime.magnetTimer),
+      remoteCharges: runtime.remoteCharges,
+      remoteBombs: runtime.bombs.filter((bomb) => bomb.remote).length,
     });
   }, []);
 
@@ -600,6 +694,37 @@ export default function Home() {
     syncHud();
   }, [playTone, syncHud]);
 
+  const hurtPlayer = useCallback(
+    (runtime: Runtime) => {
+      if (runtime.invulnerable > 0) return;
+      if (runtime.shield > 0) {
+        runtime.shield -= 1;
+        runtime.invulnerable = 0.9;
+        playTone(620, 0.12, "triangle");
+        syncHud();
+        return;
+      }
+      runtime.lives -= 1;
+      runtime.invulnerable = 1.8;
+      runtime.player.x = tileCenter(1);
+      runtime.player.y = tileCenter(1);
+      playTone(105, 0.22, "sawtooth");
+      syncHud();
+    },
+    [playTone, syncHud],
+  );
+
+  const detonateRemote = useCallback(() => {
+    const runtime = runtimeRef.current;
+    if (runtime.status !== "playing") return;
+    const remoteBombs = runtime.bombs.filter((bomb) => bomb.remote);
+    if (!remoteBombs.length) return;
+    remoteBombs.forEach((bomb) => {
+      bomb.fuse = 0;
+    });
+    playTone(460, 0.08, "square");
+  }, [playTone]);
+
   const placeBomb = useCallback(() => {
     const runtime = runtimeRef.current;
     if (
@@ -615,16 +740,20 @@ export default function Home() {
     ) {
       return;
     }
+    const remote = runtime.remoteCharges > 0;
     runtime.bombs.push({
       id: runtime.nextBombId,
       col,
       row,
-      fuse: 2.15,
+      fuse: remote ? 12 : 2.15,
       range: runtime.bombRange,
+      remote,
     });
+    if (remote) runtime.remoteCharges -= 1;
     runtime.nextBombId += 1;
     playTone(260, 0.07, "sine");
-  }, [playTone]);
+    syncHud();
+  }, [playTone, syncHud]);
 
   const explodeBomb = useCallback(
     (runtime: Runtime, bomb: Bomb) => {
@@ -646,13 +775,15 @@ export default function Home() {
           if (tile === 2) {
             runtime.board[row][col] = 0;
             runtime.score += 30;
-            const dropRoll = (col * 31 + row * 17 + bomb.id * 13) % 10;
-            if (dropRoll < 3) {
-              const types: PowerType[] = ["range", "speed", "bubble"];
+            const dropRoll = (col * 31 + row * 17 + bomb.id * 13) % 100;
+            if (dropRoll < 43) {
+              const poolIndex =
+                (col * 7 + row * 11 + bomb.id * 5 + runtime.level) %
+                powerDropPool.length;
               runtime.powerUps.push({
                 col,
                 row,
-                type: types[dropRoll],
+                type: powerDropPool[poolIndex],
                 bob: bomb.id,
               });
             }
@@ -691,16 +822,12 @@ export default function Home() {
         runtime.invulnerable <= 0 &&
         keys.has(flameKey(playerCol, playerRow))
       ) {
-        runtime.lives -= 1;
-        runtime.invulnerable = 1.8;
-        runtime.player.x = tileCenter(1);
-        runtime.player.y = tileCenter(1);
-        playTone(115, 0.22, "sawtooth");
+        hurtPlayer(runtime);
       } else {
         playTone(150, 0.12, "square");
       }
     },
-    [playTone],
+    [hurtPlayer, playTone],
   );
 
   useEffect(() => {
@@ -730,6 +857,7 @@ export default function Home() {
       }
       keysRef.current.add(event.code);
       if (event.code === "Space" && !event.repeat) placeBomb();
+      if (event.code === "KeyE" && !event.repeat) detonateRemote();
       if (
         event.code === "Enter" &&
         runtimeRef.current.status === "ready"
@@ -747,7 +875,7 @@ export default function Home() {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [placeBomb, resetGame]);
+  }, [detonateRemote, placeBomb, resetGame]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -767,6 +895,8 @@ export default function Home() {
       if (runtime.status === "playing") {
         runtime.timeLeft -= delta;
         runtime.invulnerable = Math.max(0, runtime.invulnerable - delta);
+        runtime.freezeTimer = Math.max(0, runtime.freezeTimer - delta);
+        runtime.magnetTimer = Math.max(0, runtime.magnetTimer - delta);
 
         let dx = 0;
         let dy = 0;
@@ -810,7 +940,13 @@ export default function Home() {
           const current = directions[enemy.direction];
           const oldX = enemy.x;
           const oldY = enemy.y;
-          moveActor(runtime, enemy, current.x, current.y, delta);
+          moveActor(
+            runtime,
+            enemy,
+            current.x,
+            current.y,
+            delta * (runtime.freezeTimer > 0 ? 0.42 : 1),
+          );
           const blocked =
             Math.abs(enemy.x - oldX) < 0.01 &&
             Math.abs(enemy.y - oldY) < 0.01;
@@ -841,32 +977,43 @@ export default function Home() {
           }
 
           if (
-            runtime.invulnerable <= 0 &&
             Math.hypot(
               runtime.player.x - enemy.x,
               runtime.player.y - enemy.y,
             ) < 34
           ) {
-            runtime.lives -= 1;
-            runtime.invulnerable = 1.8;
-            runtime.player.x = tileCenter(1);
-            runtime.player.y = tileCenter(1);
-            playTone(105, 0.22, "sawtooth");
+            hurtPlayer(runtime);
           }
         });
 
         runtime.powerUps = runtime.powerUps.filter((powerUp) => {
           const x = tileCenter(powerUp.col);
           const y = tileCenter(powerUp.row);
-          if (Math.hypot(runtime.player.x - x, runtime.player.y - y) > 27) {
+          const pickupRadius = runtime.magnetTimer > 0 ? TILE * 2.4 : 27;
+          if (
+            Math.hypot(runtime.player.x - x, runtime.player.y - y) >
+            pickupRadius
+          ) {
             return true;
           }
           if (powerUp.type === "speed") {
             runtime.player.speed = Math.min(235, runtime.player.speed + 22);
           } else if (powerUp.type === "range") {
             runtime.bombRange = Math.min(5, runtime.bombRange + 1);
-          } else {
+          } else if (powerUp.type === "bubble") {
             runtime.maxBombs = Math.min(4, runtime.maxBombs + 1);
+          } else if (powerUp.type === "shield") {
+            runtime.shield = Math.min(2, runtime.shield + 1);
+          } else if (powerUp.type === "clock") {
+            runtime.timeLeft = Math.min(180, runtime.timeLeft + 15);
+          } else if (powerUp.type === "freeze") {
+            runtime.freezeTimer = Math.max(runtime.freezeTimer, 8);
+          } else if (powerUp.type === "remote") {
+            runtime.remoteCharges = Math.min(3, runtime.remoteCharges + 1);
+          } else if (powerUp.type === "magnet") {
+            runtime.magnetTimer = Math.max(runtime.magnetTimer, 10);
+          } else if (powerUp.type === "heal") {
+            runtime.lives = Math.min(5, runtime.lives + 1);
           }
           runtime.score += 100;
           playTone(880, 0.1, "triangle");
@@ -903,7 +1050,7 @@ export default function Home() {
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [explodeBomb, playTone, saveBest, syncHud]);
+  }, [explodeBomb, hurtPlayer, playTone, saveBest, syncHud]);
 
   const holdDirection = (
     event: ReactPointerEvent<HTMLButtonElement>,
@@ -988,7 +1135,7 @@ export default function Home() {
               </div>
             </div>
             <div className="life-row" aria-label={`剩余 ${hud.lives} 条生命`}>
-              {Array.from({ length: 3 }, (_, index) => (
+              {Array.from({ length: 5 }, (_, index) => (
                 <span
                   className={index < hud.lives ? "active" : ""}
                   key={index}
@@ -1008,6 +1155,16 @@ export default function Home() {
                 <span>泡泡数量</span>
                 <strong>{hud.bubbles}</strong>
               </div>
+              <div>
+                <i className="ability-icon shield">◇</i>
+                <span>护盾层数</span>
+                <strong>{hud.shield}</strong>
+              </div>
+              <div>
+                <i className="ability-icon remote">R</i>
+                <span>遥控器</span>
+                <strong>{hud.remoteCharges}</strong>
+              </div>
             </div>
             <div className="best">
               <span>今日最佳</span>
@@ -1015,7 +1172,7 @@ export default function Home() {
             </div>
             <div className="tip">
               <span>战术提示</span>
-              炸开橙色箱子，可能掉落速度、范围和泡泡升级。
+              炸开橙色箱子可获得九种道具。遥控泡泡放下后，按 E 主动起爆。
             </div>
           </aside>
 
@@ -1027,6 +1184,14 @@ export default function Home() {
               aria-label="泡泡堂水上街区游戏区域"
               tabIndex={0}
             />
+
+            <div className="effect-chips" aria-live="polite">
+              {hud.freeze > 0 && <span className="freeze">冰冻 {hud.freeze}s</span>}
+              {hud.magnet > 0 && <span className="magnet">磁铁 {hud.magnet}s</span>}
+              {hud.remoteBombs > 0 && (
+                <span className="remote">E · 遥控起爆</span>
+              )}
+            </div>
 
             {hud.status !== "playing" && (
               <div className="overlay">
@@ -1060,6 +1225,8 @@ export default function Home() {
                     移动
                     <kbd>SPACE</kbd>
                     放泡泡
+                    <kbd>E</kbd>
+                    遥控起爆
                   </div>
                 </div>
               </div>
@@ -1110,15 +1277,27 @@ export default function Home() {
               →
             </button>
           </div>
-          <button
-            type="button"
-            className="bubble-button"
-            onPointerDown={placeBomb}
-            aria-label="放置泡泡"
-          >
-            <span />
-            放泡泡
-          </button>
+          <div className="action-buttons">
+            <button
+              type="button"
+              className="remote-button"
+              onPointerDown={detonateRemote}
+              aria-label="遥控起爆"
+              disabled={hud.remoteBombs === 0}
+            >
+              R
+              <small>起爆</small>
+            </button>
+            <button
+              type="button"
+              className="bubble-button"
+              onPointerDown={placeBomb}
+              aria-label="放置泡泡"
+            >
+              <span />
+              放泡泡
+            </button>
+          </div>
         </div>
 
         <footer className="game-footer">
@@ -1126,7 +1305,7 @@ export default function Home() {
             <span className="live-dot" />
             清凉街区正在营业
           </div>
-          <p>方向键 / WASD 移动 · 空格键放泡泡 · 连锁引爆得分更快</p>
+          <p>方向键 / WASD 移动 · 空格键放泡泡 · E 键遥控起爆</p>
           <strong>最佳路线：先留退路</strong>
         </footer>
       </section>
