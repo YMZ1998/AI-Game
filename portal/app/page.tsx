@@ -51,6 +51,16 @@ const games = [
     tags: ["第一人称", "战术射击", "拆弹"],
     className: "tactical-game",
   },
+  {
+    number: "06",
+    title: "AI 俄罗斯方块",
+    english: "STACK LAB",
+    description: "手动完成经典堆叠，或交给两步前瞻 AI，并实时观察它选择旋转与落点。",
+    image: "/tetris-game.webp",
+    href: "http://localhost:3006/",
+    tags: ["益智", "单人", "AI 自动"],
+    className: "tetris-game",
+  },
 ];
 
 export default function Home() {
@@ -67,7 +77,7 @@ export default function Home() {
 
         <div className="online-status">
           <i />
-          <span>5 款游戏在线</span>
+          <span>6 款游戏在线</span>
         </div>
 
         <nav aria-label="主导航">
@@ -94,7 +104,7 @@ export default function Home() {
         </div>
         <div className="hero-bottom">
           <p>
-            五款认真做的小游戏，
+            六款认真做的小游戏，
             <br />
             一个入口，点开就玩。
           </p>
@@ -161,7 +171,7 @@ export default function Home() {
       </section>
 
       <section className="about-section" id="about">
-        <div className="about-index">06</div>
+        <div className="about-index">07</div>
         <div className="about-copy">
           <span>NEXT UP</span>
           <h2>下一款，正在路上。</h2>

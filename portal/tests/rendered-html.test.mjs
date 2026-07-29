@@ -22,7 +22,7 @@ async function render() {
   );
 }
 
-test("server-renders all five game tickets", async () => {
+test("server-renders all six game tickets", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -34,7 +34,8 @@ test("server-renders all five game tickets", async () => {
   assert.match(html, /泡泡堂/);
   assert.match(html, /夜巡追捕/);
   assert.match(html, /临界行动/);
-  assert.match(html, /5 款游戏在线/);
+  assert.match(html, /AI 俄罗斯方块/);
+  assert.match(html, /6 款游戏在线/);
   assert.match(html, /night-patrol-police-chase\.ymz1998\.chatgpt\.site/);
 });
 
@@ -46,5 +47,7 @@ test("includes accessible game links and metadata", async () => {
   assert.match(html, /aria-label="开始玩夜巡追捕"/);
   assert.match(html, /alt="夜巡追捕游戏封面"/);
   assert.match(html, /aria-label="开始玩临界行动"/);
+  assert.match(html, /aria-label="开始玩AI 俄罗斯方块"/);
+  assert.match(html, /localhost:3006/);
   assert.match(html, /rel="noreferrer"/);
 });

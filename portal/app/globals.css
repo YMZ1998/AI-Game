@@ -357,6 +357,17 @@ nav a:hover::after {
   height: clamp(320px, 38vw, 540px);
 }
 
+.tetris-game {
+  grid-column: 1 / -1;
+  color: #e8f4f2;
+  background: #071116;
+}
+
+.tetris-game .ticket-image {
+  height: clamp(320px, 38vw, 540px);
+  background: #071116;
+}
+
 .ticket-image {
   position: relative;
   height: clamp(280px, 34vw, 510px);
@@ -519,6 +530,20 @@ nav a:hover::after {
   background: #66e0c2;
 }
 
+.tetris-game .ticket-copy,
+.tetris-game .ticket-copy p {
+  color: #e8f4f2;
+}
+
+.tetris-game .ticket-copy p {
+  color: rgba(232, 244, 242, 0.68);
+}
+
+.tetris-game .play-button i {
+  color: #071116;
+  background: #c9f84a;
+}
+
 .game-ticket:hover .play-button i {
   transform: rotate(45deg);
 }
@@ -677,6 +702,10 @@ a:focus-visible {
     grid-column: auto;
   }
 
+  .tetris-game {
+    grid-column: auto;
+  }
+
   .ticket-image {
     height: clamp(300px, 60vw, 520px);
   }
@@ -772,6 +801,10 @@ a:focus-visible {
   }
 
   .tactical-game .ticket-image {
+    height: 280px;
+  }
+
+  .tetris-game .ticket-image {
     height: 280px;
   }
 

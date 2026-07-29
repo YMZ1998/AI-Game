@@ -13,6 +13,7 @@
 | 泡泡堂 | [`games/bubble-battle`](games/bubble-battle) | `cd games/bubble-battle && npm install && npm run dev` |
 | 夜巡追捕 | [`games/police-chase`](games/police-chase) | `cd games/police-chase && npm install && npm run dev` |
 | 临界行动 | [`games/critical-operation`](games/critical-operation) | `cd games/critical-operation && npm install && npm run dev -- --hostname 0.0.0.0 --port 3005` |
+| AI 俄罗斯方块 | [`games/tetris-game`](games/tetris-game) | `cd games/tetris-game && npm install && npm run dev -- --hostname 0.0.0.0 --port 3006` |
 
 ## 目录约定
 
@@ -36,7 +37,11 @@ games/
 │   ├── app/
 │   ├── public/
 │   └── package.json
-└── critical-operation/
+├── critical-operation/
+│   ├── app/
+│   ├── public/
+│   └── package.json
+└── tetris-game/
     ├── app/
     ├── public/
     └── package.json
