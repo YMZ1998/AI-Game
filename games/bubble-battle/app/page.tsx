@@ -240,7 +240,7 @@ function canOccupy(
   x: number,
   y: number,
   radius: number,
-  ignoreBombTile?: string,
+  ignoredBombTiles?: ReadonlySet<string>,
 ) {
   const corners = [
     [x - radius, y - radius],
@@ -255,10 +255,28 @@ function canOccupy(
     if (runtime.board[row]?.[col] !== 0) return false;
     const key = `${col},${row}`;
     return (
-      key === ignoreBombTile ||
+      ignoredBombTiles?.has(key) ||
       !runtime.bombs.some((bomb) => bomb.col === col && bomb.row === row)
     );
   });
+}
+
+function overlappingBombTiles(
+  runtime: Runtime,
+  actor: Actor,
+  radius: number,
+) {
+  return new Set(
+    runtime.bombs
+      .filter(
+        (bomb) =>
+          actor.x + radius > bomb.col * TILE &&
+          actor.x - radius < (bomb.col + 1) * TILE &&
+          actor.y + radius > bomb.row * TILE &&
+          actor.y - radius < (bomb.row + 1) * TILE,
+      )
+      .map((bomb) => `${bomb.col},${bomb.row}`),
+  );
 }
 
 function moveActor(
@@ -269,20 +287,15 @@ function moveActor(
   delta: number,
 ) {
   const radius = 18;
-  const bombCol = Math.floor(actor.x / TILE);
-  const bombRow = Math.floor(actor.y / TILE);
-  const standingBomb = runtime.bombs.some(
-    (bomb) => bomb.col === bombCol && bomb.row === bombRow,
-  )
-    ? `${bombCol},${bombRow}`
-    : undefined;
   const nextX = actor.x + dx * actor.speed * delta;
   const nextY = actor.y + dy * actor.speed * delta;
 
-  if (canOccupy(runtime, nextX, actor.y, radius, standingBomb)) {
+  const ignoredBombTilesX = overlappingBombTiles(runtime, actor, radius);
+  if (canOccupy(runtime, nextX, actor.y, radius, ignoredBombTilesX)) {
     actor.x = nextX;
   }
-  if (canOccupy(runtime, actor.x, nextY, radius, standingBomb)) {
+  const ignoredBombTilesY = overlappingBombTiles(runtime, actor, radius);
+  if (canOccupy(runtime, actor.x, nextY, radius, ignoredBombTilesY)) {
     actor.y = nextY;
   }
 }

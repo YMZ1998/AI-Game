@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" role="img" aria-labelledby="title desc">
+  <title id="title">临界行动游戏封面</title>
+  <desc id="desc">港口仓库中的原创第一人称战术射击场景</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#071019"/>
+      <stop offset="1" stop-color="#1a2731"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a5050"/>
+      <stop offset="1" stop-color="#101821"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <rect width="1536" height="1024" fill="#0b1116"/>
+  <path d="M0 0h1536v518H0z" fill="url(#sky)"/>
+  <path d="M0 518h1536v506H0z" fill="url(#floor)"/>
+  <path d="M0 476h1536v54H0z" fill="#f2b84b" opacity=".13"/>
+  <path d="M0 0h265v1024H0zM1271 0h265v1024h-265z" fill="#101821"/>
+  <path d="M265 155h1006v56H265zM265 419h312v92H265zM959 419h312v92H959z" fill="#3e484b"/>
+  <g stroke="#82939b" opacity=".26">
+    <path d="M265 155L0 1024M1271 155l265 869M577 511L420 1024M959 511l157 513"/>
+    <path d="M0 735h1536M0 887h1536"/>
+  </g>
+  <circle cx="768" cy="512" r="92" fill="none" stroke="#66e0c2" stroke-width="6" opacity=".16" filter="url(#glow)"/>
+  <g stroke="#66e0c2" stroke-width="7">
+    <path d="M710 512h38M788 512h38M768 454v38M768 532v38"/>
+  </g>
+  <g transform="translate(1136 622)">
+    <rect x="-70" y="-75" width="140" height="146" fill="#242d31" stroke="#f2b84b" stroke-width="9"/>
+    <rect x="-47" y="-49" width="94" height="44" fill="#66e0c2"/>
+    <text x="0" y="-15" text-anchor="middle" fill="#0b1116" font-family="Arial" font-size="38" font-weight="900">B</text>
+    <path d="M-46 31Q0 0 49 34" fill="none" stroke="#ff5a52" stroke-width="8"/>
+  </g>
+  <g transform="translate(768 920) rotate(-4)">
+    <ellipse cx="-116" cy="11" rx="154" ry="72" fill="#98785e"/>
+    <rect x="-220" y="-98" width="370" height="92" fill="#1d262b"/>
+    <rect x="-118" y="-126" width="388" height="37" fill="#43535b"/>
+    <rect x="154" y="-119" width="190" height="24" fill="#0c1216"/>
+    <rect x="-189" y="-87" width="56" height="10" fill="#66e0c2"/>
+  </g>
+  <rect x="70" y="68" width="122" height="122" fill="none" stroke="#66e0c2" stroke-width="8"/>
+  <text x="131" y="147" text-anchor="middle" fill="#66e0c2" font-family="Arial" font-size="54" font-weight="900">CT</text>
+  <text x="70" y="810" fill="#dce4e3" font-family="Arial, Microsoft YaHei" font-size="128" font-weight="900" letter-spacing="-8">临界行动</text>
+  <text x="78" y="876" fill="#82939b" font-family="Arial" font-size="30" font-weight="900" letter-spacing="12">CRITICAL OPERATION</text>
+  <rect x="76" y="915" width="370" height="45" fill="#f2b84b"/>
+  <text x="261" y="947" text-anchor="middle" fill="#0b1116" font-family="Arial, Microsoft YaHei" font-size="24" font-weight="900">第一人称 · 战术射击 · 拆弹</text>
+</svg>
