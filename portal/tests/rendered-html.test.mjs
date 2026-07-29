@@ -111,6 +111,11 @@ test("provides an in-memory anonymous LAN chat server", async () => {
   assert.match(serverSource, /message\.type === "send_message"/);
   assert.match(serverSource, /message\.type === "react"/);
   assert.match(serverSource, /message\.type === "clear_messages"/);
+  assert.match(serverSource, /MAX_IMAGE_BYTES = 1_500_000/);
+  assert.match(serverSource, /MAX_ROOM_IMAGE_BYTES = 12_000_000/);
+  assert.match(serverSource, /hasExpectedImageSignature/);
+  assert.match(serverSource, /jpeg\|png\|webp\|gif/);
+  assert.match(serverSource, /maxPayload: MAX_REQUEST_BYTES/);
   assert.doesNotMatch(serverSource, /writeFile|appendFile|localStorage/);
 });
 

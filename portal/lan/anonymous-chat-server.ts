@@ -15,6 +15,12 @@ type SocketLike = {
 
 type ReactionKey = "共鸣" | "好奇" | "哈哈";
 
+type StoredImage = {
+  dataUrl: string;
+  mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  byteLength: number;
+};
+
 type Member = {
   id: string;
   socket: SocketLike;
@@ -30,6 +36,7 @@ type Message = {
   alias: string;
   color: number;
   text: string;
+  image: StoredImage | null;
   sentAt: string;
   reactions: Record<ReactionKey, Set<string>>;
 };
@@ -53,6 +60,7 @@ type ClientMessage = {
   type?: string;
   code?: unknown;
   text?: unknown;
+  image?: unknown;
   messageId?: unknown;
   reaction?: unknown;
 };
@@ -106,6 +114,16 @@ const OPEN_ROOM_CODE = "OPEN";
 const MAX_MESSAGES = 80;
 const MAX_MEMBERS = 30;
 const SEND_INTERVAL_MS = 650;
+const MAX_IMAGE_BYTES = 1_500_000;
+const MAX_ROOM_IMAGE_BYTES = 12_000_000;
+const MAX_IMAGE_DATA_URL_LENGTH = 2_100_000;
+const MAX_REQUEST_BYTES = 2_200_000;
+const IMAGE_MIME_TYPES = new Set<StoredImage["mimeType"]>([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 function makeAlias(existing: Set<string>) {
   for (let attempt = 0; attempt < 40; attempt += 1) {
@@ -144,6 +162,71 @@ function safeCode(value: unknown) {
     .slice(0, 4);
 }
 
+function hasExpectedImageSignature(
+  mimeType: StoredImage["mimeType"],
+  bytes: Buffer,
+) {
+  if (mimeType === "image/jpeg") {
+    return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (mimeType === "image/png") {
+    return (
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47
+    );
+  }
+  if (mimeType === "image/gif") {
+    const header = bytes.subarray(0, 6).toString("ascii");
+    return header === "GIF87a" || header === "GIF89a";
+  }
+  return (
+    bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
+    bytes.subarray(8, 12).toString("ascii") === "WEBP"
+  );
+}
+
+function parseImage(
+  value: unknown,
+): { image: StoredImage | null } | { error: string } {
+  if (value == null) return { image: null };
+  if (typeof value !== "object") return { error: "图片数据无效" };
+
+  const dataUrl = String(
+    (value as { dataUrl?: unknown }).dataUrl ?? "",
+  );
+  if (!dataUrl || dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+    return { error: "图片不能超过 1.5 MB" };
+  }
+
+  const match = dataUrl.match(
+    /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/,
+  );
+  if (!match) return { error: "仅支持 JPG、PNG、WebP 或 GIF 图片" };
+
+  const mimeType = match[1] as StoredImage["mimeType"];
+  if (!IMAGE_MIME_TYPES.has(mimeType)) {
+    return { error: "不支持这种图片格式" };
+  }
+
+  const bytes = Buffer.from(match[2], "base64");
+  if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) {
+    return { error: "图片不能超过 1.5 MB" };
+  }
+  if (!hasExpectedImageSignature(mimeType, bytes)) {
+    return { error: "图片内容与格式不一致" };
+  }
+
+  return {
+    image: {
+      dataUrl,
+      mimeType,
+      byteLength: bytes.length,
+    },
+  };
+}
+
 function localNetworkOrigins(port: string) {
   const origins = new Set([`http://localhost:${port}`]);
   for (const records of Object.values(networkInterfaces())) {
@@ -158,8 +241,14 @@ function localNetworkOrigins(port: string) {
 
 async function readRequestBody(request: IncomingMessage) {
   const chunks: Buffer[] = [];
+  let total = 0;
   for await (const chunk of request) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += buffer.length;
+    if (total > MAX_REQUEST_BYTES) {
+      throw new Error("request-too-large");
+    }
+    chunks.push(buffer);
   }
   return Buffer.concat(chunks).toString("utf8");
 }
@@ -204,7 +293,10 @@ export function anonymousChatServer(): Plugin {
   const rooms = new Map<string, Room>();
   const memberships = new Map<SocketLike, Membership>();
   const pollingSockets = new Map<string, PollingSocket>();
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({
+    noServer: true,
+    maxPayload: MAX_REQUEST_BYTES,
+  });
 
   const createRoom = (code: string, isPublic: boolean): Room => {
     const room: Room = {
@@ -250,6 +342,7 @@ export function anonymousChatServer(): Plugin {
       alias: message.alias,
       color: message.color,
       text: message.text,
+      image: message.image,
       sentAt: message.sentAt,
       reactions: {
         共鸣: message.reactions.共鸣.size,
@@ -373,8 +466,13 @@ export function anonymousChatServer(): Plugin {
 
     if (message.type === "send_message") {
       const text = safeText(message.text);
-      if (!text) {
-        sendError(socket, "说点什么再发出信号吧");
+      const parsedImage = parseImage(message.image);
+      if ("error" in parsedImage) {
+        sendError(socket, parsedImage.error);
+        return;
+      }
+      if (!text && !parsedImage.image) {
+        sendError(socket, "写一句话或选择一张图片再发出信号吧");
         return;
       }
       if (Date.now() - member.lastMessageAt < SEND_INTERVAL_MS) {
@@ -388,6 +486,7 @@ export function anonymousChatServer(): Plugin {
         alias: member.alias,
         color: member.color,
         text,
+        image: parsedImage.image,
         sentAt: new Date().toISOString(),
         reactions: {
           共鸣: new Set(),
@@ -395,7 +494,17 @@ export function anonymousChatServer(): Plugin {
           哈哈: new Set(),
         },
       });
-      room.messages = room.messages.slice(-MAX_MESSAGES);
+      let roomImageBytes = room.messages.reduce(
+        (total, entry) => total + (entry.image?.byteLength ?? 0),
+        0,
+      );
+      while (
+        room.messages.length > MAX_MESSAGES ||
+        roomImageBytes > MAX_ROOM_IMAGE_BYTES
+      ) {
+        const removed = room.messages.shift();
+        roomImageBytes -= removed?.image?.byteLength ?? 0;
+      }
       broadcast(room);
       return;
     }
@@ -529,7 +638,25 @@ export function anonymousChatServer(): Plugin {
         pollingSocket.lastSeen = Date.now();
 
         if (request.method === "POST") {
-          pollingSocket.emitMessage(await readRequestBody(request));
+          try {
+            pollingSocket.emitMessage(await readRequestBody(request));
+          } catch (error) {
+            if (
+              error instanceof Error &&
+              error.message === "request-too-large"
+            ) {
+              response.statusCode = 413;
+              response.setHeader(
+                "content-type",
+                "application/json; charset=utf-8",
+              );
+              response.end(
+                JSON.stringify({ type: "error", message: "图片不能超过 1.5 MB" }),
+              );
+              return;
+            }
+            throw error;
+          }
         } else if (request.method !== "GET") {
           response.statusCode = 405;
           response.setHeader("allow", "GET, POST");

@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- ephemeral data URLs cannot use the image optimizer */
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type Connection = "connecting" | "websocket" | "polling" | "offline";
@@ -12,12 +13,23 @@ type Member = {
   isHost: boolean;
 };
 
+type ChatImage = {
+  dataUrl: string;
+  mimeType: string;
+  byteLength: number;
+};
+
+type PendingImage = ChatImage & {
+  name: string;
+};
+
 type ChatMessage = {
   id: string;
   memberId: string;
   alias: string;
   color: number;
   text: string;
+  image: ChatImage | null;
   sentAt: string;
   reactions: Record<ReactionKey, number>;
   reactedBySelf: ReactionKey[];
@@ -45,13 +57,20 @@ type ClientAction =
   | { type: "join_public" }
   | { type: "create_room" }
   | { type: "join_room"; code: string }
-  | { type: "send_message"; text: string }
+  | { type: "send_message"; text: string; image?: ChatImage }
   | { type: "react"; messageId: string; reaction: ReactionKey }
   | { type: "next_topic" }
   | { type: "clear_messages" }
   | { type: "leave" };
 
 const REACTIONS: ReactionKey[] = ["共鸣", "好奇", "哈哈"];
+const MAX_IMAGE_BYTES = 1_500_000;
+const ACCEPTED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 function makeClientId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -68,11 +87,106 @@ function formatTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatBytes(value: number) {
+  if (value < 1024) return `${value} B`;
+  return `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function readBlobAsDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result)));
+    reader.addEventListener("error", () => reject(new Error("读取图片失败")));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function loadImageFile(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    image.addEventListener("load", () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    });
+    image.addEventListener("error", () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("无法解析这张图片"));
+    });
+    image.src = objectUrl;
+  });
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number,
+) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("图片压缩失败"));
+      },
+      type,
+      quality,
+    );
+  });
+}
+
+async function prepareImage(file: File): Promise<PendingImage> {
+  if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
+    throw new Error("仅支持 JPG、PNG、WebP 或 GIF 图片");
+  }
+
+  if (file.size <= MAX_IMAGE_BYTES) {
+    return {
+      dataUrl: await readBlobAsDataUrl(file),
+      mimeType: file.type,
+      byteLength: file.size,
+      name: file.name,
+    };
+  }
+
+  if (file.type === "image/gif") {
+    throw new Error("GIF 图片需小于 1.5 MB");
+  }
+
+  const source = await loadImageFile(file);
+  const maxSide = Math.max(source.naturalWidth, source.naturalHeight);
+  let scale = Math.min(1, 1600 / maxSide);
+  const qualities = [0.84, 0.72, 0.6, 0.5];
+
+  for (const quality of qualities) {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("当前浏览器无法压缩图片");
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const blob = await canvasToBlob(canvas, "image/webp", quality);
+    if (blob.size <= MAX_IMAGE_BYTES) {
+      return {
+        dataUrl: await readBlobAsDataUrl(blob),
+        mimeType: "image/webp",
+        byteLength: blob.size,
+        name: file.name.replace(/\.[^.]+$/, "") + ".webp",
+      };
+    }
+    scale *= 0.76;
+  }
+
+  throw new Error("图片压缩后仍超过 1.5 MB，请换一张较小的图片");
+}
+
 export default function AnonymousChat() {
   const [connection, setConnection] = useState<Connection>("connecting");
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [roomCode, setRoomCode] = useState("");
   const [draft, setDraft] = useState("");
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+  const [lightbox, setLightbox] = useState<ChatImage | null>(null);
   const [notice, setNotice] = useState("正在寻找大厅信号…");
   const [joining, setJoining] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
@@ -81,6 +195,7 @@ export default function AnonymousChat() {
   const desiredJoinRef = useRef<ClientAction | null>(null);
   const roomStateRef = useRef<RoomState | null>(null);
   const messageEndRef = useRef<HTMLDivElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const acceptPayload = useCallback((payload: ServerPayload) => {
     if (payload.type === "chat_state") {
@@ -198,6 +313,15 @@ export default function AnonymousChat() {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [roomState?.messages.length]);
 
+  useEffect(() => {
+    if (!lightbox) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLightbox(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [lightbox]);
+
   const sendAction = useCallback(
     async (action: ClientAction) => {
       if (
@@ -238,9 +362,37 @@ export default function AnonymousChat() {
   const submitMessage = (event: FormEvent) => {
     event.preventDefault();
     const text = draft.trim();
-    if (!text || !roomState) return;
-    void sendAction({ type: "send_message", text });
+    if ((!text && !pendingImage) || !roomState) return;
+    void sendAction({
+      type: "send_message",
+      text,
+      image: pendingImage
+        ? {
+            dataUrl: pendingImage.dataUrl,
+            mimeType: pendingImage.mimeType,
+            byteLength: pendingImage.byteLength,
+          }
+        : undefined,
+    });
     setDraft("");
+    setPendingImage(null);
+  };
+
+  const selectImage = async (file: File | undefined) => {
+    if (!file) return;
+    setImageBusy(true);
+    setNotice("正在整理图片信号…");
+    try {
+      const prepared = await prepareImage(file);
+      setPendingImage(prepared);
+      setNotice(`图片已准备：${prepared.name} · ${formatBytes(prepared.byteLength)}`);
+    } catch (error) {
+      setPendingImage(null);
+      setNotice(error instanceof Error ? error.message : "图片处理失败");
+    } finally {
+      setImageBusy(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
   };
 
   const leaveRoom = () => {
@@ -445,7 +597,24 @@ export default function AnonymousChat() {
                           {formatTime(message.sentAt)}
                         </time>
                       </header>
-                      <p>{message.text}</p>
+                      {message.text && <p>{message.text}</p>}
+                      {message.image && (
+                        <button
+                          type="button"
+                          className="message-image"
+                          onClick={() => setLightbox(message.image)}
+                          aria-label={`查看${message.alias}发送的图片`}
+                        >
+                          <img
+                            src={message.image.dataUrl}
+                            alt={`${message.alias}发送的图片`}
+                          />
+                          <span>
+                            <b>IMAGE SIGNAL</b>
+                            点击放大 · {formatBytes(message.image.byteLength)}
+                          </span>
+                        </button>
+                      )}
                       <div className="reaction-row" aria-label="回应这条消息">
                         {REACTIONS.map((reaction) => (
                           <button
@@ -490,7 +659,27 @@ export default function AnonymousChat() {
               <label htmlFor="message-draft">
                 以 <strong>{roomState.self.alias}</strong> 的身份发言
               </label>
-              <div>
+              {pendingImage && (
+                <div className="image-preview">
+                  <img
+                    src={pendingImage.dataUrl}
+                    alt={`待发送图片：${pendingImage.name}`}
+                  />
+                  <div>
+                    <span>IMAGE READY</span>
+                    <strong>{pendingImage.name}</strong>
+                    <small>{formatBytes(pendingImage.byteLength)}</small>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingImage(null)}
+                    aria-label="移除待发送图片"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <div className="composer-body">
                 <textarea
                   id="message-draft"
                   value={draft}
@@ -509,12 +698,38 @@ export default function AnonymousChat() {
                   maxLength={160}
                   rows={2}
                 />
-                <button type="submit" disabled={!draft.trim()}>
-                  发出信号
-                  <span>↗</span>
-                </button>
+                <div className="composer-actions">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) =>
+                      void selectImage(event.currentTarget.files?.[0])
+                    }
+                    aria-label="选择要发送的图片"
+                  />
+                  <button
+                    type="button"
+                    className="image-button"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={imageBusy}
+                  >
+                    <span>{imageBusy ? "…" : "▧"}</span>
+                    {imageBusy ? "压缩中" : "添加图片"}
+                  </button>
+                  <button
+                    type="submit"
+                    className="send-button"
+                    disabled={(!draft.trim() && !pendingImage) || imageBusy}
+                  >
+                    发出信号
+                    <span>↗</span>
+                  </button>
+                </div>
               </div>
-              <small>{draft.length}/160 · Enter 发送 · Shift + Enter 换行</small>
+              <small>
+                {draft.length}/160 · 图片最大 1.5 MB · Enter 发送
+              </small>
             </form>
           </section>
 
@@ -575,8 +790,32 @@ export default function AnonymousChat() {
 
       <footer className="radio-footer">
         <span>ANONYMOUS · LOCAL NETWORK · EPHEMERAL</span>
-        <p>无需账号 · 随机代号 · 内存消息 · 同端口局域网</p>
+        <p>无需账号 · 图文消息 · 内存存储 · 同端口局域网</p>
       </footer>
+
+      {lightbox && (
+        <div
+          className="image-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="图片预览"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            aria-label="关闭图片预览"
+          >
+            ×
+          </button>
+          <img
+            src={lightbox.dataUrl}
+            alt="聊天室图片大图"
+            onClick={(event) => event.stopPropagation()}
+          />
+          <span>{formatBytes(lightbox.byteLength)} · ESC 关闭</span>
+        </div>
+      )}
     </main>
   );
 }

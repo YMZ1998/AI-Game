@@ -2,6 +2,8 @@ const baseUrl = process.env.PLAYROOM_URL ?? "http://localhost:3003";
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const hostId = `chat-host-${suffix}`;
 const guestId = `chat-guest-${suffix}`;
+const tinyPng =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 async function request(clientId, action) {
   const response = await fetch(
@@ -39,11 +41,21 @@ assert(joined.self.alias !== created.self.alias, "aliases should be unique");
 const posted = await request(hostId, {
   type: "send_message",
   text: "今晚的局域网信号很好。",
+  image: {
+    dataUrl: tinyPng,
+    mimeType: "image/png",
+    byteLength: 999999,
+  },
 });
 assert(posted.messages.length === 1, "message was not posted");
 assert(
   posted.messages[0].text === "今晚的局域网信号很好。",
   "message text changed unexpectedly",
+);
+assert(posted.messages[0].image?.mimeType === "image/png", "image was not posted");
+assert(
+  posted.messages[0].image.byteLength < 200,
+  "server trusted the client image size instead of validating bytes",
 );
 
 const reacted = await request(guestId, {

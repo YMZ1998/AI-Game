@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -35,4 +36,20 @@ test("exposes accessible room entry and privacy states", async () => {
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /无需账号/);
   assert.doesNotMatch(html, /localStorage/);
+});
+
+test("supports compressed image messages and an accessible preview", async () => {
+  const source = await readFile(
+    new URL("../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /MAX_IMAGE_BYTES = 1_500_000/);
+  assert.match(source, /accept="image\/jpeg,image\/png,image\/webp,image\/gif"/);
+  assert.match(source, /prepareImage/);
+  assert.match(source, /canvasToBlob/);
+  assert.match(source, /添加图片/);
+  assert.match(source, /移除待发送图片/);
+  assert.match(source, /role="dialog"/);
+  assert.match(source, /关闭图片预览/);
 });

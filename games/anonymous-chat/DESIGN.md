@@ -59,6 +59,11 @@ components:
     textColor: "{colors.foreground}"
     rounded: "{rounded.md}"
     padding: 16px
+  image-message:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: 8px
   button-primary:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.primary}"
@@ -106,7 +111,7 @@ Georgia 用于标题与话题，营造夜间电台和私人手记的气质；Ari
 
 ## Layout
 
-桌面采用房间信息、对话主舞台、话题与成员三栏结构。消息流始终占据最大面积，输入器固定在主舞台底部。窄屏收为单栏：话题、消息、输入、成员依次排列，所有关键操作保留至少 44px 触控区域。
+桌面采用房间信息、对话主舞台、话题与成员三栏结构。消息流始终占据最大面积，输入器固定在主舞台底部。图片作为“电台明信片”嵌入消息气泡，发送前显示压缩预览，点击后进入不裁切的大图层。窄屏收为单栏：话题、消息、输入、成员依次排列，所有关键操作保留至少 44px 触控区域。
 
 ## Motion
 
@@ -120,6 +125,7 @@ Georgia 用于标题与话题，营造夜间电台和私人手记的气质；Ari
 
 - 不使用账号、头像上传或永久昵称。
 - 消息最多 160 字，只保存在大厅主机内存，重启即清空。
+- 图片仅支持 JPG、PNG、WebP、GIF，单张不超过 1.5 MB；房间图片总量受内存上限控制。
 - 私密房间通过四位房间码加入。
 - 房主可切换话题并清空屏幕。
 - 服务端限制消息长度、反应类型和发送频率。
