@@ -12,7 +12,7 @@
 npm run dev
 ```
 
-访问 `http://localhost:3003`。六款游戏都通过大厅的同一端口打开，不需要分别启动各游戏服务。
+访问 `http://localhost:3003`。七款游戏都通过大厅的同一端口打开，不需要分别启动各游戏服务。
 
 ## 游戏列表
 
@@ -24,6 +24,7 @@ npm run dev
 | 夜巡追捕 | [`games/police-chase`](games/police-chase) | `cd games/police-chase && npm install && npm run dev` |
 | 临界行动 | [`games/critical-operation`](games/critical-operation) | `cd games/critical-operation && npm install && npm run dev -- --hostname 0.0.0.0 --port 3005` |
 | AI 俄罗斯方块 | [`games/tetris-game`](games/tetris-game) | `cd games/tetris-game && npm install && npm run dev -- --hostname 0.0.0.0 --port 3006` |
+| 匿名夜话 | [`games/anonymous-chat`](games/anonymous-chat) | `cd games/anonymous-chat && npm install && npm run dev -- --hostname 0.0.0.0 --port 3007` |
 
 ## 目录约定
 
@@ -51,7 +52,11 @@ games/
 │   ├── app/
 │   ├── public/
 │   └── package.json
-└── tetris-game/
+├── tetris-game/
+│   ├── app/
+│   ├── public/
+│   └── package.json
+└── anonymous-chat/
     ├── app/
     ├── public/
     └── package.json

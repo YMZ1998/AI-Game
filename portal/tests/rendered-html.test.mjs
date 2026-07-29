@@ -23,7 +23,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders all six game tickets", async () => {
+test("server-renders all seven game tickets", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -36,8 +36,10 @@ test("server-renders all six game tickets", async () => {
   assert.match(html, /夜巡追捕/);
   assert.match(html, /临界行动/);
   assert.match(html, /AI 俄罗斯方块/);
-  assert.match(html, /6 款游戏在线/);
+  assert.match(html, /匿名夜话/);
+  assert.match(html, /7 款游戏在线/);
   assert.match(html, /href="\/play\/police-chase\/index\.html"/);
+  assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
 });
 
 test("includes accessible game links and metadata", async () => {
@@ -49,7 +51,9 @@ test("includes accessible game links and metadata", async () => {
   assert.match(html, /alt="夜巡追捕游戏封面"/);
   assert.match(html, /aria-label="开始玩临界行动"/);
   assert.match(html, /aria-label="开始玩AI 俄罗斯方块"/);
+  assert.match(html, /aria-label="开始玩匿名夜话"/);
   assert.match(html, /href="\/play\/tetris-game\/index\.html"/);
+  assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
   assert.doesNotMatch(html, /localhost:300(?:0|1|2|5|6)/);
 });
 
@@ -75,6 +79,7 @@ test("ships every game as a same-origin embedded build", async () => {
     "police-chase",
     "critical-operation",
     "tetris-game",
+    "anonymous-chat",
   ];
 
   for (const slug of slugs) {
@@ -88,6 +93,25 @@ test("ships every game as a same-origin embedded build", async () => {
     assert.doesNotMatch(html, /localhost:\d+/);
     assert.doesNotMatch(html, new RegExp(`/embedded/${slug}/embedded/`));
   }
+});
+
+test("provides an in-memory anonymous LAN chat server", async () => {
+  const serverSource = await readFile(
+    new URL("../lan/anonymous-chat-server.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serverSource, /WebSocketServer/);
+  assert.match(serverSource, /anonymous-chat-ws/);
+  assert.match(serverSource, /\/api\/anonymous-chat\/room/);
+  assert.match(serverSource, /\/api\/anonymous-chat\/network/);
+  assert.match(serverSource, /PollingSocket/);
+  assert.match(serverSource, /message\.type === "join_public"/);
+  assert.match(serverSource, /message\.type === "create_room"/);
+  assert.match(serverSource, /message\.type === "send_message"/);
+  assert.match(serverSource, /message\.type === "react"/);
+  assert.match(serverSource, /message\.type === "clear_messages"/);
+  assert.doesNotMatch(serverSource, /writeFile|appendFile|localStorage/);
 });
 
 test("provides a local-only Doudizhu room server and CSV score ledger", async () => {

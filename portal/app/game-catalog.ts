@@ -70,6 +70,17 @@ export const games: GameCatalogItem[] = [
     tags: ["益智", "单人", "AI 自动"],
     className: "tetris-game",
   },
+  {
+    number: "07",
+    slug: "anonymous-chat",
+    title: "匿名夜话",
+    english: "MIDNIGHT FREQUENCY",
+    description:
+      "无需账号，带着随机代号进入局域网频道，围绕今晚的话题交换回应与共鸣。",
+    image: "/anonymous-chat.svg",
+    tags: ["社交", "局域网", "匿名"],
+    className: "chat-game",
+  },
 ];
 
 export function findGame(slug: string) {

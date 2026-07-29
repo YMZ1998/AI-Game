@@ -368,6 +368,17 @@ nav a:hover::after {
   background: #071116;
 }
 
+.chat-game {
+  grid-column: 1 / -1;
+  color: #fff7eb;
+  background: #15152b;
+}
+
+.chat-game .ticket-image {
+  height: clamp(320px, 38vw, 540px);
+  background: #0b0b1a;
+}
+
 .ticket-image {
   position: relative;
   height: clamp(280px, 34vw, 510px);
@@ -544,6 +555,20 @@ nav a:hover::after {
   background: #c9f84a;
 }
 
+.chat-game .ticket-copy,
+.chat-game .ticket-copy p {
+  color: #fff7eb;
+}
+
+.chat-game .ticket-copy p {
+  color: rgba(255, 247, 235, 0.68);
+}
+
+.chat-game .play-button i {
+  color: #0b0b1a;
+  background: #ff8066;
+}
+
 .game-ticket:hover .play-button i {
   transform: rotate(45deg);
 }
@@ -706,6 +731,10 @@ a:focus-visible {
     grid-column: auto;
   }
 
+  .chat-game {
+    grid-column: auto;
+  }
+
   .ticket-image {
     height: clamp(300px, 60vw, 520px);
   }
@@ -805,6 +834,10 @@ a:focus-visible {
   }
 
   .tetris-game .ticket-image {
+    height: 280px;
+  }
+
+  .chat-game .ticket-image {
     height: 280px;
   }
 

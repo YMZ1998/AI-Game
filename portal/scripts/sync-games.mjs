@@ -45,6 +45,12 @@ const gameCatalog = [
     title: "AI 俄罗斯方块",
     english: "STACK LAB",
   },
+  {
+    slug: "anonymous-chat",
+    number: "07",
+    title: "匿名夜话",
+    english: "MIDNIGHT FREQUENCY",
+  },
 ];
 
 async function exists(target) {

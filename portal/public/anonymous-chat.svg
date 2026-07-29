@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">匿名夜话游戏封面</title>
+  <desc id="desc">午夜电台般的深靛色空间里，两枚匿名印章通过珊瑚色声波交流。</desc>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#302e5b"/>
+      <stop offset="0.48" stop-color="#15152b"/>
+      <stop offset="1" stop-color="#0b0b1a"/>
+    </radialGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffad8e"/>
+      <stop offset="1" stop-color="#ff6b5b"/>
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g opacity=".22" stroke="#a99bff">
+    <path d="M0 120h1600M0 240h1600M0 360h1600M0 480h1600M0 600h1600M0 720h1600"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path d="M140 160v36m120-36v18m120-18v52m120-52v27m120-27v67m120-67v24m120-24v53m120-53v21m120-21v64m120-64v33m120-33v18" stroke="#5d5975" stroke-width="7"/>
+    <path d="M535 464c72-115 154-170 246-170 105 0 168 75 273 75 89 0 161-46 222-134" stroke="#ff8066" stroke-width="16"/>
+    <path d="M527 513c85-84 169-123 253-116 100 8 165 73 265 75 80 2 149-25 207-77" stroke="#a99bff" stroke-width="7" opacity=".55"/>
+  </g>
+  <circle cx="440" cy="520" r="155" fill="#ff8066" opacity=".12" filter="url(#shadow)"/>
+  <circle cx="440" cy="520" r="132" fill="none" stroke="#ff8066" stroke-width="2" opacity=".36"/>
+  <circle cx="440" cy="520" r="101" fill="url(#coral)"/>
+  <text x="440" y="554" text-anchor="middle" fill="#0b0b1a" font-family="Georgia, serif" font-size="96" font-weight="700">匿</text>
+  <circle cx="1212" cy="340" r="124" fill="#8ef0c7" opacity=".1" filter="url(#shadow)"/>
+  <circle cx="1212" cy="340" r="104" fill="none" stroke="#8ef0c7" stroke-width="2" opacity=".4"/>
+  <circle cx="1212" cy="340" r="77" fill="#8ef0c7"/>
+  <text x="1212" y="367" text-anchor="middle" fill="#0b0b1a" font-family="Georgia, serif" font-size="68" font-weight="700">夜</text>
+  <g transform="translate(900 620)">
+    <rect width="500" height="138" rx="24" fill="#20203d" stroke="#fff7eb" stroke-opacity=".13"/>
+    <circle cx="48" cy="45" r="12" fill="#a99bff"/>
+    <rect x="78" y="32" width="150" height="14" rx="7" fill="#fff7eb" opacity=".82"/>
+    <rect x="48" y="76" width="385" height="12" rx="6" fill="#9894ae" opacity=".45"/>
+    <rect x="48" y="100" width="280" height="12" rx="6" fill="#9894ae" opacity=".28"/>
+  </g>
+  <g font-family="Consolas, monospace" font-weight="700">
+    <text x="140" y="105" fill="#ff8066" font-size="28" letter-spacing="6">MIDNIGHT FREQUENCY</text>
+    <text x="140" y="800" fill="#fff7eb" font-size="86" letter-spacing="-5">匿名夜话</text>
+    <text x="140" y="850" fill="#9894ae" font-size="22" letter-spacing="5">NO ACCOUNT · LOCAL SIGNAL · MEMORY ONLY</text>
+    <text x="1432" y="105" text-anchor="end" fill="#8ef0c7" font-size="24">LIVE</text>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+/node_modules
+/.next
+/.vinext
+/dist
+/.wrangler
+/work
+/coverage
+*.tsbuildinfo
+.env*
+npm-debug.log*

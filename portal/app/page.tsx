@@ -15,7 +15,7 @@ export default function Home() {
 
         <div className="online-status">
           <i />
-          <span>6 款游戏在线</span>
+          <span>7 款游戏在线</span>
         </div>
 
         <nav aria-label="主导航">
@@ -42,7 +42,7 @@ export default function Home() {
         </div>
         <div className="hero-bottom">
           <p>
-            六款认真做的小游戏，
+            七款认真做的小游戏，
             <br />
             一个入口，点开就玩。
           </p>
@@ -107,7 +107,7 @@ export default function Home() {
       </section>
 
       <section className="about-section" id="about">
-        <div className="about-index">07</div>
+        <div className="about-index">08</div>
         <div className="about-copy">
           <span>NEXT UP</span>
           <h2>下一款，正在路上。</h2>
