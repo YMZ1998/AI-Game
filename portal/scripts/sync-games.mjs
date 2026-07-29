@@ -185,6 +185,8 @@ function renderGameShell({ slug, number, title, english }) {
       const frame=document.querySelector("#game");
       const stage=document.querySelector("#stage");
       const status=document.querySelector("#status");
+      const room=new URLSearchParams(location.search).get("room");
+      if(room) frame.src="/embedded/${slug}/index.html?room="+encodeURIComponent(room);
       frame.addEventListener("load",()=>status.classList.add("done"),{once:true});
       document.querySelector("#reload").addEventListener("click",()=>{
         status.classList.remove("done");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import LanGame from "./LanGame";
 
 type Suit = "♠" | "♥" | "♣" | "♦" | "joker";
 type Phase = "dealing" | "bidding" | "playing" | "finished";
@@ -71,12 +72,14 @@ type GameState = {
   bidTurns: number;
   bidHistory: BidRecord[];
   plays: number[];
+  playedCards: Card[];
   spring: boolean;
   roundDelta: number;
 };
 
 const PLAYER_NAMES = ["你", "阿桃", "老陈"];
 const PLAYER_TITLES = ["今日牌手", "稳健派", "记牌高手"];
+const COUNTER_RANKS = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3];
 const RANK_LABELS: Record<number, string> = {
   3: "3",
   4: "4",
@@ -129,6 +132,7 @@ const emptyGame: GameState = {
   bidTurns: 0,
   bidHistory: [],
   plays: [0, 0, 0],
+  playedCards: [],
   spring: false,
   roundDelta: 0,
 };
@@ -692,6 +696,7 @@ function applyPlay(state: GameState, player: number, cards: Card[]): GameState {
     ...state,
     hands,
     plays,
+    playedCards: [...state.playedCards, ...cards],
     lastPlay: { player, cards: sortCards(cards), combo },
     passes: 0,
     currentTurn: (player + 1) % 3,
@@ -787,10 +792,18 @@ function PlayerSeat({
     (game.phase === "playing" || game.phase === "bidding") &&
     game.currentTurn === index;
   const isLandlord = game.landlord === index;
+  const dangerCount =
+    game.phase === "playing" && game.hands[index].length <= 2
+      ? game.hands[index].length
+      : null;
   return (
     <aside className={`player-seat player-${index} ${isTurn ? "active" : ""}`}>
       <div className="player-portrait">
-        <span aria-hidden="true">{index === 1 ? "桃" : "陈"}</span>
+        <span className="portrait-face" aria-hidden="true">
+          <i className="portrait-hair" />
+          <i className="portrait-eyes" />
+          <b>{index === 1 ? "桃" : "陈"}</b>
+        </span>
         {isLandlord && <i className="landlord-pin">地主</i>}
       </div>
       <div className="player-details">
@@ -798,6 +811,11 @@ function PlayerSeat({
         <span>{PLAYER_TITLES[index]}</span>
         <b>余 {game.hands[index].length} 张</b>
       </div>
+      {dangerCount !== null && (
+        <strong className="danger-callout">
+          {dangerCount === 1 ? "报单" : "报双"}
+        </strong>
+      )}
       <div className="opponent-cards" aria-label={`${PLAYER_NAMES[index]}的手牌`}>
         {[0, 1, 2, 3, 4].map((item) => (
           <CardBack key={item} index={item} />
@@ -812,7 +830,7 @@ function PlayerSeat({
   );
 }
 
-export default function Home() {
+function SoloGame({ onLan }: { onLan: () => void }) {
   const [game, setGame] = useState<GameState>(emptyGame);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [toast, setToast] = useState("");
@@ -992,6 +1010,20 @@ export default function Home() {
     [selectedCards],
   );
 
+  const remainingRankCounts = useMemo(() => {
+    const counts = new Map<number, number>(
+      COUNTER_RANKS.map((rank) => [rank, rank >= 16 ? 1 : 4]),
+    );
+    [...game.hands[0], ...game.playedCards].forEach((card) => {
+      counts.set(card.rank, Math.max(0, (counts.get(card.rank) ?? 0) - 1));
+    });
+    return COUNTER_RANKS.map((rank) => ({
+      rank,
+      label: RANK_LABELS[rank],
+      count: counts.get(rank) ?? 0,
+    }));
+  }, [game.hands, game.playedCards]);
+
   const selectedCanPlay = useMemo(() => {
     if (!currentCombo) return false;
     if (!game.lastPlay || game.lastPlay.player === 0) return true;
@@ -1123,6 +1155,9 @@ export default function Home() {
           <span>积分 {record.score >= 0 ? "+" : ""}{record.score}</span>
         </div>
         <div className="header-actions">
+          <button type="button" className="mode-switch" onClick={onLan}>
+            局域网对战
+          </button>
           <button
             type="button"
             onClick={() => setSoundOn((current) => !current)}
@@ -1155,6 +1190,24 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        <aside className="card-counter" aria-label="记牌器">
+          <div className="counter-heading">
+            <strong>记牌器</strong>
+            <span>REMEMBER</span>
+          </div>
+          <div className="counter-ranks">
+            {remainingRankCounts.map((item) => (
+              <div
+                className={`${item.count === 0 ? "empty" : ""} ${item.rank >= 16 ? "joker" : ""}`}
+                key={item.rank}
+              >
+                <span>{item.label === "小王" ? "小" : item.label === "大王" ? "大" : item.label}</span>
+                <b>{item.count}</b>
+              </div>
+            ))}
+          </div>
+        </aside>
 
         <PlayerSeat index={2} game={game} />
         <PlayerSeat index={1} game={game} />
@@ -1257,7 +1310,11 @@ export default function Home() {
         <div className={`self-seat ${game.currentTurn === 0 && game.phase === "playing" ? "active" : ""}`}>
           <div className="self-info">
             <div className="self-avatar">
-              <span>你</span>
+              <span className="portrait-face self-portrait" aria-hidden="true">
+                <i className="portrait-hair" />
+                <i className="portrait-eyes" />
+                <b>你</b>
+              </span>
               {playerIsLandlord && <i className="landlord-pin">地主</i>}
             </div>
             <div>
@@ -1291,6 +1348,9 @@ export default function Home() {
           )}
 
           <div className="hand" aria-label="你的手牌">
+            <span className="hand-caption">
+              手牌 <b>{game.hands[0].length}</b>
+            </span>
             {game.hands[0].map((card) => (
               <CardFace
                 key={card.id}
@@ -1319,7 +1379,7 @@ export default function Home() {
                 </button>
                 <button
                   type="button"
-                  className="control secondary"
+                  className="control hint"
                   onClick={hint}
                   title="快捷键 H"
                 >
@@ -1354,5 +1414,19 @@ export default function Home() {
         <span>支持：顺子 / 连对 / 飞机 / 四带二 / 炸弹 / 王炸</span>
       </footer>
     </main>
+  );
+}
+
+export default function Home() {
+  const [mode, setMode] = useState<"solo" | "lan">("solo");
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has("room")) setMode("lan");
+  }, []);
+
+  return mode === "lan" ? (
+    <LanGame onExit={() => setMode("solo")} />
+  ) : (
+    <SoloGame onLan={() => setMode("lan")} />
   );
 }

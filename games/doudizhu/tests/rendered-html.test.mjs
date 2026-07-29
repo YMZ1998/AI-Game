@@ -58,3 +58,26 @@ test("keeps the full round loop and accessibility states in source", async () =>
   assert.match(css, /@media \(max-width: 640px\)/);
   assert.match(design, /name: Jade Table/);
 });
+
+test("ships LAN rooms, score sheets, and a same-origin realtime client", async () => {
+  const lanSource = await readFile(
+    new URL("../app/LanGame.tsx", import.meta.url),
+    "utf8",
+  );
+  const pageSource = await readFile(
+    new URL("../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(pageSource, /局域网对战/);
+  assert.match(lanSource, /\/doudizhu-ws/);
+  assert.match(lanSource, /\/api\/doudizhu\/room/);
+  assert.match(lanSource, /\/api\/doudizhu\/network/);
+  assert.match(lanSource, /setInterval/);
+  assert.match(lanSource, /创建新房间/);
+  assert.match(lanSource, /加入房间/);
+  assert.match(lanSource, /房间积分表/);
+  assert.match(lanSource, /\/api\/doudizhu\/scores\.csv/);
+  assert.match(lanSource, /location\.host/);
+  assert.doesNotMatch(lanSource, /localhost:\d+/);
+});

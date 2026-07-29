@@ -89,3 +89,21 @@ test("ships every game as a same-origin embedded build", async () => {
     assert.doesNotMatch(html, new RegExp(`/embedded/${slug}/embedded/`));
   }
 });
+
+test("provides a local-only Doudizhu room server and CSV score ledger", async () => {
+  const serverSource = await readFile(
+    new URL("../lan/doudizhu-server.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serverSource, /WebSocketServer/);
+  assert.match(serverSource, /doudizhu-ws/);
+  assert.match(serverSource, /\/api\/doudizhu\/room/);
+  assert.match(serverSource, /\/api\/doudizhu\/network/);
+  assert.match(serverSource, /PollingSocket/);
+  assert.match(serverSource, /doudizhu-scores\.csv/);
+  assert.match(serverSource, /时间,房间,玩家,座位,身份,结果,倍数,本局积分,累计积分/);
+  assert.match(serverSource, /message\.type === "create"/);
+  assert.match(serverSource, /message\.type === "join"/);
+  assert.match(serverSource, /message\.type === "play"/);
+});

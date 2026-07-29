@@ -1,7 +1,7 @@
 ---
 version: "alpha"
 name: Jade Table
-description: A refined Chinese card-room identity combining deep jade felt, warm paper cards, restrained gold, and seal red.
+description: A lively modern Chinese card-room identity combining deep jade felt, warm paper cards, restrained gold, and clear multiplayer status.
 colors:
   primary: "#173F35"
   primary-deep: "#081D19"
@@ -10,6 +10,7 @@ colors:
   accent: "#D5A94C"
   danger: "#9E392D"
   focus: "#78D4FF"
+  info: "#4D9DCE"
   muted: "#8FA79E"
 typography:
   display:
@@ -66,6 +67,12 @@ components:
     typography: "{typography.label-caps}"
     rounded: "{rounded.md}"
     padding: 12px
+  button-hint:
+    backgroundColor: "{colors.info}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.md}"
+    padding: 12px
   result-danger:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.surface}"
@@ -81,15 +88,21 @@ components:
   focus-ring:
     backgroundColor: "{colors.focus}"
     size: 3px
+  memory-counter:
+    backgroundColor: "{colors.primary-deep}"
+    textColor: "{colors.surface}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.md}"
+    padding: 8px
 ---
 
 ## Overview
 
-Jade Table presents 斗地主 as a quiet premium card room rather than a noisy casino. Deep green felt, warm cream cards, and sparse gold details create ceremony and hierarchy; seal red is reserved for decisive outcomes.
+Jade Table presents 斗地主 as a lively, polished card room rather than a noisy casino. Deep green felt, warm cream cards, and sparse gold details create ceremony and hierarchy; seal red is reserved for decisive outcomes. The three-seat hierarchy follows familiar mobile card-game ergonomics while all characters, marks, and visual assets remain original.
 
 ## Colors
 
-Jade and near-black green form the environmental layers. Cream carries readable surfaces and card faces. Gold identifies the landlord role, primary actions, and active-turn cues. Red appears only in suits, warnings, and result seals.
+Jade and near-black green form the environmental layers. Cream carries readable surfaces and card faces. Gold identifies the landlord role, primary actions, and active-turn cues. Blue is reserved for hints and informational actions. Red appears only in suits, warnings, and result seals.
 
 ## Typography
 
@@ -97,7 +110,7 @@ Use Georgia for the brand, card ranks, and ceremonial result moments. Use Arial 
 
 ## Layout
 
-The table remains the visual center. Seat information sits at the edges, the last play occupies the middle, and the player's hand and controls stay anchored to the bottom. Responsive layouts may simplify metadata but must preserve turn, ownership, and playable-card state.
+The table remains the visual center. Seat information sits at the edges, the last play occupies the middle, the memory counter sits within quick eye reach, and the player's hand and three primary controls stay anchored to the bottom. LAN room and score-table views use the same material language. Responsive layouts may simplify metadata but must preserve turn, ownership, connection, and playable-card state.
 
 ## Elevation & Depth
 
@@ -109,11 +122,15 @@ Cards use compact rounded corners; panels use larger soft corners; seals and rol
 
 ## Components
 
-Gold buttons represent committed actions. Cream panels handle bidding and results. Active seats receive a subtle gold border and glow. Focus rings use bright blue so keyboard state remains distinct from game-state gold.
+Gold buttons represent committed actions, while blue is reserved for hints and informational actions. Cream panels handle bidding, room entry, score sheets, and results. Active seats receive a subtle gold border and glow. Focus rings use bright blue so keyboard state remains distinct from game-state gold.
+
+## Signature Differentiator
+
+Every match is visually anchored by three face-up landlord cards above a restrained gold landlord seal. This small ceremonial center remains visible in both solo and LAN play and is the table's most recognizable motif.
 
 ## Do's and Don'ts
 
-- Do keep card faces, selected cards, turn state, and disabled controls unmistakable.
+- Do keep card faces, selected cards, turn state, connection status, and disabled controls unmistakable.
 - Do retain Chinese cultural cues through proportion, typography, and seal motifs.
 - Don't overuse gold, red, grain, or ornamental borders.
 - Don't remove keyboard focus or reduced-motion behavior.
