@@ -7,9 +7,15 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  buildMap,
+  getMapName,
+  MAP_COLS,
+  MAP_ROWS,
+} from "./map-layouts";
 
-const COLS = 15;
-const ROWS = 11;
+const COLS = MAP_COLS;
+const ROWS = MAP_ROWS;
 const TILE = 56;
 const WIDTH = COLS * TILE;
 const HEIGHT = ROWS * TILE;
@@ -67,6 +73,7 @@ type PowerUp = {
 
 type Runtime = {
   status: Status;
+  mapName: string;
   board: number[][];
   player: Actor;
   enemies: Enemy[];
@@ -91,6 +98,7 @@ type Runtime = {
 
 type Hud = {
   status: Status;
+  mapName: string;
   level: number;
   score: number;
   lives: number;
@@ -140,48 +148,6 @@ const powerVisuals: Record<PowerType, { color: string; symbol: string }> = {
   heal: { color: "#ff4567", symbol: "♥" },
 };
 
-const spawnSafe = new Set([
-  "1,1",
-  "2,1",
-  "1,2",
-  "13,9",
-  "12,9",
-  "13,8",
-  "1,9",
-  "2,9",
-  "1,8",
-  "13,1",
-  "12,1",
-  "13,2",
-]);
-
-function seededRandom(seed: number) {
-  let value = seed >>> 0;
-  return () => {
-    value = (value * 1664525 + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
-}
-
-function buildBoard(level: number) {
-  const random = seededRandom(6889 + level * 917);
-  return Array.from({ length: ROWS }, (_, row) =>
-    Array.from({ length: COLS }, (_, col) => {
-      if (
-        row === 0 ||
-        col === 0 ||
-        row === ROWS - 1 ||
-        col === COLS - 1 ||
-        (row % 2 === 0 && col % 2 === 0)
-      ) {
-        return 1;
-      }
-      if (spawnSafe.has(`${col},${row}`)) return 0;
-      return random() < Math.min(0.43 + level * 0.015, 0.56) ? 2 : 0;
-    }),
-  );
-}
-
 function tileCenter(tile: number) {
   return tile * TILE + TILE / 2;
 }
@@ -228,7 +194,8 @@ function createRuntime(level = 1, score = 0, lives = 3): Runtime {
 
   return {
     status: "ready",
-    board: buildBoard(level),
+    mapName: getMapName(level),
+    board: buildMap(level),
     player: makeActor(1, 1, "#25a9ff", 172),
     enemies: enemySpawns
       .slice(0, enemyCount)
@@ -884,6 +851,7 @@ export default function Home() {
   const [bestScore, setBestScore] = useState(0);
   const [hud, setHud] = useState<Hud>({
     status: "ready",
+    mapName: getMapName(1),
     level: 1,
     score: 0,
     lives: 3,
@@ -902,6 +870,7 @@ export default function Home() {
     const runtime = runtimeRef.current;
     setHud({
       status: runtime.status,
+      mapName: runtime.mapName,
       level: runtime.level,
       score: runtime.score,
       lives: runtime.lives,
@@ -1375,7 +1344,7 @@ export default function Home() {
               <strong>{hud.score.toLocaleString()}</strong>
             </div>
             <div>
-              <span>街区</span>
+              <span>街区 · {hud.mapName}</span>
               <strong>{String(hud.level).padStart(2, "0")}</strong>
             </div>
             <div>
@@ -1474,9 +1443,9 @@ export default function Home() {
                 <div className="overlay-card">
                   <div className="overlay-kicker">
                     {hud.status === "ready"
-                      ? "WATER BATTLE · 01"
+                      ? `${hud.mapName} · DISTRICT 01`
                       : hud.status === "levelComplete"
-                        ? `DISTRICT ${String(hud.level).padStart(2, "0")} CLEAR`
+                        ? `${hud.mapName} · DISTRICT ${String(hud.level).padStart(2, "0")} CLEAR`
                         : "TRY ANOTHER ROUTE"}
                   </div>
                   <h2>{overlayTitle}</h2>
@@ -1579,7 +1548,7 @@ export default function Home() {
         <footer className="game-footer">
           <div>
             <span className="live-dot" />
-            清凉街区正在营业
+            {hud.mapName}正在营业
           </div>
           <p>方向键 / WASD 移动 · 空格键放泡泡 · E 键遥控起爆</p>
           <strong>最佳路线：先留退路</strong>
