@@ -68,7 +68,7 @@ export default function Home() {
           {games.map((game) => (
             <a
               className={`game-ticket ${game.className}`}
-              href={`/play/${game.slug}`}
+              href={`/play/${game.slug}/index.html`}
               key={game.title}
               aria-label={`开始玩${game.title}`}
             >

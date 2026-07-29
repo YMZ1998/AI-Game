@@ -37,7 +37,7 @@ test("server-renders all six game tickets", async () => {
   assert.match(html, /临界行动/);
   assert.match(html, /AI 俄罗斯方块/);
   assert.match(html, /6 款游戏在线/);
-  assert.match(html, /href="\/play\/police-chase"/);
+  assert.match(html, /href="\/play\/police-chase\/index\.html"/);
 });
 
 test("includes accessible game links and metadata", async () => {
@@ -49,19 +49,22 @@ test("includes accessible game links and metadata", async () => {
   assert.match(html, /alt="夜巡追捕游戏封面"/);
   assert.match(html, /aria-label="开始玩临界行动"/);
   assert.match(html, /aria-label="开始玩AI 俄罗斯方块"/);
-  assert.match(html, /href="\/play\/tetris-game"/);
+  assert.match(html, /href="\/play\/tetris-game\/index\.html"/);
   assert.doesNotMatch(html, /localhost:300(?:0|1|2|5|6)/);
 });
 
-test("renders the same-origin game shell", async () => {
-  const response = await render("/play/tetris-game");
-  assert.equal(response.status, 200);
+test("generates a static same-origin game shell", async () => {
+  const shellUrl = new URL(
+    "../public/play/tetris-game/index.html",
+    import.meta.url,
+  );
+  const html = await readFile(shellUrl, "utf8");
 
-  const html = await response.text();
   assert.match(html, /返回大厅/);
   assert.match(html, /重新载入/);
   assert.match(html, /全屏游玩/);
   assert.match(html, /src="\/embedded\/tetris-game\/index\.html"/);
+  assert.doesNotMatch(html, /localhost:\d+/);
 });
 
 test("ships every game as a same-origin embedded build", async () => {
