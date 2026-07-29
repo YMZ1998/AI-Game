@@ -94,6 +94,12 @@ components:
     typography: "{typography.label-caps}"
     rounded: "{rounded.md}"
     padding: 8px
+  bot-marker:
+    backgroundColor: "{colors.info}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.pill}"
+    padding: 4px
 ---
 
 ## Overview
@@ -122,7 +128,7 @@ Cards use compact rounded corners; panels use larger soft corners; seals and rol
 
 ## Components
 
-Gold buttons represent committed actions, while blue is reserved for hints and informational actions. Cream panels handle bidding, room entry, score sheets, and results. Active seats receive a subtle gold border and glow. Focus rings use bright blue so keyboard state remains distinct from game-state gold.
+Gold buttons represent committed actions, while blue is reserved for hints, informational actions, and clearly identified bot seats. Bot portraits use a restrained antenna-and-blue-eye treatment instead of a separate visual theme. Cream panels handle bidding, room entry, score sheets, and results. Active seats receive a subtle gold border and glow. Focus rings use bright blue so keyboard state remains distinct from game-state gold.
 
 ## Signature Differentiator
 

@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import assert from "node:assert/strict";
 
 const address = process.argv[2] ?? "ws://127.0.0.1:3003/doudizhu-ws";
 const inboxes = new WeakMap();
@@ -58,3 +59,33 @@ console.log(
 );
 
 for (const socket of sockets) socket.close();
+
+const botHost = await connect();
+await next(botHost);
+send(botHost, { type: "create", name: "房主" });
+const botRoom = await next(botHost);
+
+send(botHost, { type: "add_bot", seat: 1 });
+await next(botHost);
+send(botHost, { type: "add_bot", seat: 2 });
+const filledWithBots = await next(botHost);
+
+assert.equal(filledWithBots.players.length, 3);
+assert.equal(
+  filledWithBots.players.filter((player) => player.isBot).length,
+  2,
+);
+
+send(botHost, { type: "start" });
+const botMatch = await next(botHost);
+assert.equal(botMatch.match?.phase, "bidding");
+
+console.log(
+  JSON.stringify({
+    code: botRoom.roomCode,
+    bots: botMatch.players.filter((player) => player.isBot).map((player) => player.name),
+    phase: botMatch.match?.phase,
+  }),
+);
+
+botHost.close();

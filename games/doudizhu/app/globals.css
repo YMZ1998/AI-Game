@@ -1632,9 +1632,121 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.055);
 }
 
+.waiting-seat.bot-seat {
+  border-color: rgba(77, 157, 206, 0.55);
+  background:
+    linear-gradient(145deg, rgba(77, 157, 206, 0.1), transparent 62%),
+    rgba(255, 255, 255, 0.045);
+}
+
 .waiting-seat .avatar-ring {
   width: 72px;
   height: 72px;
+}
+
+.bot-avatar {
+  border-color: #4d9dce;
+  box-shadow: 0 0 0 4px rgba(77, 157, 206, 0.12);
+}
+
+.portrait-face.bot {
+  background:
+    radial-gradient(circle at 50% 55%, #c7d6d6 0 32%, transparent 33%),
+    linear-gradient(145deg, #a9c1c3, #4d7d83);
+}
+
+.portrait-face.bot .portrait-hair {
+  top: 10%;
+  left: 47%;
+  width: 6%;
+  height: 25%;
+  border-radius: 999px;
+  background: #294d57;
+  transform: none;
+}
+
+.portrait-face.bot .portrait-hair::before {
+  position: absolute;
+  top: -5px;
+  left: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  content: "";
+  background: #4d9dce;
+  box-shadow: 0 0 8px rgba(120, 212, 255, 0.75);
+}
+
+.portrait-face.bot .portrait-eyes {
+  top: 51%;
+  width: 10%;
+  height: 8%;
+  border-radius: 2px;
+  background: #25698b;
+  box-shadow: 17px 0 #25698b;
+}
+
+.bot-seat-action {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  border: 1px dashed #4d9dce;
+  border-radius: 50%;
+  color: #b8dcef;
+  background: rgba(77, 157, 206, 0.08);
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bot-seat-action span {
+  color: #78d4ff;
+  font: 900 17px/1 Georgia, serif;
+}
+
+.bot-seat-action:hover,
+.bot-seat-action:focus-visible {
+  color: #211813;
+  background: #4d9dce;
+  outline: 3px solid rgba(120, 212, 255, 0.42);
+  outline-offset: 3px;
+}
+
+.bot-badge {
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #17252a;
+  background: #4d9dce;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.remove-bot {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 48px;
+  min-height: 30px;
+  border: 1px solid rgba(158, 57, 45, 0.5);
+  border-radius: 999px;
+  color: #efb7ae;
+  background: rgba(158, 57, 45, 0.12);
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.remove-bot:hover,
+.remove-bot:focus-visible {
+  color: #fff5e2;
+  background: #9e392d;
+  outline: 3px solid rgba(120, 212, 255, 0.42);
+  outline-offset: 2px;
 }
 
 .waiting-seat > span {
@@ -1974,6 +2086,23 @@ button:focus-visible {
   .waiting-seat .avatar-ring {
     width: 52px;
     height: 52px;
+  }
+
+  .bot-seat-action {
+    width: 52px;
+    height: 52px;
+    font-size: 7px;
+  }
+
+  .bot-seat-action span {
+    font-size: 13px;
+  }
+
+  .remove-bot {
+    right: 5px;
+    bottom: 5px;
+    min-width: 42px;
+    min-height: 26px;
   }
 
   .waiting-seat strong {

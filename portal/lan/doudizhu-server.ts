@@ -65,17 +65,20 @@ type MatchState = {
 type RoomPlayer = {
   seat: number;
   name: string;
-  socket: SocketLike;
+  socket: SocketLike | null;
   score: number;
+  isBot: boolean;
 };
 type Room = {
   code: string;
   hostSeat: number;
   players: Map<number, RoomPlayer>;
   match: MatchState | null;
+  botTimer?: ReturnType<typeof setTimeout>;
 };
 
 const PLAYER_LABELS = ["玩家一", "玩家二", "玩家三"];
+const BOT_NAMES = ["小智", "阿福", "牌小灵"];
 const RANK_LABELS: Record<number, string> = {
   3: "3",
   4: "4",
@@ -498,6 +501,7 @@ export function doudizhuLanServer(): Plugin {
   const wss = new WebSocketServer({ noServer: true });
   const dataDir = path.resolve(import.meta.dirname, "../data");
   const scoreFile = path.join(dataDir, "doudizhu-scores.csv");
+  let scheduleBots: (room: Room) => void = () => {};
   const csvHeader =
     "\uFEFF时间,房间,玩家,座位,身份,结果,倍数,本局积分,累计积分\r\n";
 
@@ -512,6 +516,7 @@ export function doudizhuLanServer(): Plugin {
 
   const broadcast = (room: Room) => {
     for (const player of room.players.values()) {
+      if (!player.socket) continue;
       const match = room.match;
       safeSend(player.socket, {
         type: "room",
@@ -524,6 +529,7 @@ export function doudizhuLanServer(): Plugin {
             seat: item.seat,
             name: item.name,
             score: item.score,
+            isBot: item.isBot,
             cardCount: match?.hands[item.seat]?.length ?? 0,
           })),
         match: match
@@ -549,6 +555,7 @@ export function doudizhuLanServer(): Plugin {
           : null,
       });
     }
+    scheduleBots(room);
   };
 
   const recordRound = async (room: Room) => {
@@ -565,7 +572,7 @@ export function doudizhuLanServer(): Plugin {
       return [
         timestamp,
         room.code,
-        player.name,
+        player.isBot ? `${player.name}（人机）` : player.name,
         player.seat + 1,
         player.seat === match.landlord ? "地主" : "农民",
         won ? "胜" : "负",
@@ -588,6 +595,10 @@ export function doudizhuLanServer(): Plugin {
     ) {
       safeSend(socket, { type: "error", message: "需要三位玩家到齐，并由房主开始" });
       return;
+    }
+    if (room.botTimer) {
+      clearTimeout(room.botTimer);
+      room.botTimer = undefined;
     }
     room.match = dealMatch();
     broadcast(room);
@@ -647,6 +658,104 @@ export function doudizhuLanServer(): Plugin {
     return null;
   };
 
+  const applyBid = (room: Room, seat: number, score: number) => {
+    const match = room.match;
+    if (
+      !match ||
+      match.phase !== "bidding" ||
+      match.currentTurn !== seat ||
+      !Number.isInteger(score) ||
+      score < 0 ||
+      score > 3 ||
+      (score > 0 && score <= match.highestBid)
+    ) {
+      return "当前不能这样叫分";
+    }
+    match.bidHistory.push({ player: seat, score });
+    match.bidTurns += 1;
+    if (score > match.highestBid) {
+      match.highestBid = score;
+      match.highestBidder = seat;
+    }
+    const playerName = room.players.get(seat)?.name ?? PLAYER_LABELS[seat];
+    match.actionText =
+      score === 0 ? `${playerName}不叫` : `${playerName}叫 ${score} 分`;
+    if (score === 3) {
+      finalizeLandlord(match, seat, 3);
+    } else if (match.bidTurns >= 3) {
+      if (match.highestBidder === null) {
+        room.match = dealMatch();
+        room.match.actionText = "无人叫分，已经重新发牌";
+      } else {
+        finalizeLandlord(match, match.highestBidder, match.highestBid);
+      }
+    } else {
+      match.currentTurn = (seat + 1) % 3;
+    }
+    return null;
+  };
+
+  const passTurn = (room: Room, seat: number) => {
+    const match = room.match;
+    if (
+      !match ||
+      match.phase !== "playing" ||
+      match.currentTurn !== seat ||
+      !match.lastPlay ||
+      match.lastPlay.player === seat
+    ) {
+      return "本轮先手不能不出";
+    }
+    match.passes += 1;
+    match.actionText = `${room.players.get(seat)?.name ?? PLAYER_LABELS[seat]}选择不出`;
+    if (match.passes >= 2) {
+      match.passes = 0;
+      match.lastPlay = null;
+      match.actionText = "新一轮，重新领牌";
+    }
+    match.currentTurn = (seat + 1) % 3;
+    return null;
+  };
+
+  const chooseBotBid = (hand: Card[], highestBid: number) => {
+    const groups = [...rankGroups(hand).values()];
+    const strength =
+      hand.filter((card) => card.rank >= 15).length +
+      hand.filter((card) => card.rank === 17).length +
+      groups.filter((cards) => cards.length === 4).length * 2;
+    const target = strength >= 7 ? 3 : strength >= 4 ? 2 : strength >= 2 ? 1 : 0;
+    return target > highestBid ? target : 0;
+  };
+
+  scheduleBots = (room: Room) => {
+    const match = room.match;
+    if (!match || match.phase === "finished" || room.botTimer) return;
+    const bot = room.players.get(match.currentTurn);
+    if (!bot?.isBot) return;
+
+    match.actionText = `${bot.name}正在思考…`;
+    room.botTimer = setTimeout(() => {
+      room.botTimer = undefined;
+      if (room.match !== match || match.currentTurn !== bot.seat) return;
+
+      if (match.phase === "bidding") {
+        applyBid(room, bot.seat, chooseBotBid(match.hands[bot.seat], match.highestBid));
+      } else if (match.phase === "playing") {
+        const cards = lowestHint(match, bot.seat);
+        if (cards.length) {
+          playCards(
+            room,
+            bot.seat,
+            cards.map((card) => card.id),
+          );
+        } else {
+          passTurn(room, bot.seat);
+        }
+      }
+      broadcast(room);
+    }, 650);
+  };
+
   const attachSocket = (socket: SocketLike) => {
     safeSend(socket, { type: "connected" });
 
@@ -667,6 +776,7 @@ export function doudizhuLanServer(): Plugin {
           name: playerName(message.name),
           socket,
           score: 0,
+          isBot: false,
         };
         const room: Room = {
           code,
@@ -688,17 +798,30 @@ export function doudizhuLanServer(): Plugin {
           safeSend(socket, { type: "error", message: "没有找到这个房间" });
           return;
         }
-        if (room.match || room.players.size >= 3) {
-          safeSend(socket, { type: "error", message: "房间已开始或人数已满" });
+        if (room.match) {
+          safeSend(socket, { type: "error", message: "房间已经开始" });
           return;
         }
-        const seat = [0, 1, 2].find((item) => !room.players.has(item));
-        if (seat === undefined) return;
+        let seat = [0, 1, 2].find((item) => !room.players.has(item));
+        if (seat === undefined) {
+          const replaceableBot = [...room.players.values()]
+            .filter((player) => player.isBot)
+            .sort((a, b) => b.seat - a.seat)[0];
+          if (replaceableBot) {
+            seat = replaceableBot.seat;
+            room.players.delete(seat);
+          }
+        }
+        if (seat === undefined) {
+          safeSend(socket, { type: "error", message: "房间人数已满" });
+          return;
+        }
         room.players.set(seat, {
           seat,
           name: playerName(message.name),
           socket,
           score: 0,
+          isBot: false,
         });
         memberships.set(socket, { code, seat });
         broadcast(room);
@@ -712,50 +835,47 @@ export function doudizhuLanServer(): Plugin {
         return;
       }
 
-      if (message.type === "start") {
-        startMatch(room, socket);
-      } else if (message.type === "bid") {
-        const match = room.match;
-        const score = Number(message.score);
+      if (message.type === "add_bot") {
+        const seat = Number(message.seat);
         if (
-          !match ||
-          match.phase !== "bidding" ||
-          match.currentTurn !== membership.seat ||
-          !Number.isInteger(score) ||
-          score < 0 ||
-          score > 3 ||
-          (score > 0 && score <= match.highestBid)
+          membership.seat !== room.hostSeat ||
+          room.match ||
+          !Number.isInteger(seat) ||
+          seat < 0 ||
+          seat > 2 ||
+          room.players.has(seat)
         ) {
-          safeSend(socket, { type: "error", message: "当前不能这样叫分" });
+          safeSend(socket, { type: "error", message: "当前不能在这个位置添加人机" });
           return;
         }
-        match.bidHistory.push({ player: membership.seat, score });
-        match.bidTurns += 1;
-        if (score > match.highestBid) {
-          match.highestBid = score;
-          match.highestBidder = membership.seat;
-        }
-        match.actionText =
-          score === 0
-            ? `${room.players.get(membership.seat)?.name}不叫`
-            : `${room.players.get(membership.seat)?.name}叫 ${score} 分`;
-        if (score === 3) {
-          finalizeLandlord(match, membership.seat, 3);
-        } else if (match.bidTurns >= 3) {
-          if (match.highestBidder === null) {
-            room.match = dealMatch();
-            room.match.actionText = "无人叫分，已经重新发牌";
-          } else {
-            finalizeLandlord(
-              match,
-              match.highestBidder,
-              match.highestBid,
-            );
-          }
-        } else {
-          match.currentTurn = (membership.seat + 1) % 3;
-        }
+        room.players.set(seat, {
+          seat,
+          name: BOT_NAMES[seat] ?? `人机 ${seat + 1}`,
+          socket: null,
+          score: 0,
+          isBot: true,
+        });
         broadcast(room);
+      } else if (message.type === "remove_bot") {
+        const seat = Number(message.seat);
+        const player = room.players.get(seat);
+        if (
+          membership.seat !== room.hostSeat ||
+          room.match ||
+          !player?.isBot
+        ) {
+          safeSend(socket, { type: "error", message: "当前不能移除这个人机" });
+          return;
+        }
+        room.players.delete(seat);
+        broadcast(room);
+      } else if (message.type === "start") {
+        startMatch(room, socket);
+      } else if (message.type === "bid") {
+        const score = Number(message.score);
+        const error = applyBid(room, membership.seat, score);
+        if (error) safeSend(socket, { type: "error", message: error });
+        else broadcast(room);
       } else if (message.type === "play") {
         const ids = Array.isArray(message.cardIds)
           ? message.cardIds.map(String)
@@ -767,26 +887,9 @@ export function doudizhuLanServer(): Plugin {
           broadcast(room);
         }
       } else if (message.type === "pass") {
-        const match = room.match;
-        if (
-          !match ||
-          match.phase !== "playing" ||
-          match.currentTurn !== membership.seat ||
-          !match.lastPlay ||
-          match.lastPlay.player === membership.seat
-        ) {
-          safeSend(socket, { type: "error", message: "本轮先手不能不出" });
-          return;
-        }
-        match.passes += 1;
-        match.actionText = `${room.players.get(membership.seat)?.name}选择不出`;
-        if (match.passes >= 2) {
-          match.passes = 0;
-          match.lastPlay = null;
-          match.actionText = "新一轮，重新领牌";
-        }
-        match.currentTurn = (membership.seat + 1) % 3;
-        broadcast(room);
+        const error = passTurn(room, membership.seat);
+        if (error) safeSend(socket, { type: "error", message: error });
+        else broadcast(room);
       }
     });
 
@@ -797,12 +900,20 @@ export function doudizhuLanServer(): Plugin {
       const room = rooms.get(membership.code);
       if (!room) return;
       room.players.delete(membership.seat);
-      if (room.players.size === 0) {
+      const remainingHumans = [...room.players.values()].filter(
+        (player) => !player.isBot,
+      );
+      if (remainingHumans.length === 0) {
+        if (room.botTimer) clearTimeout(room.botTimer);
         rooms.delete(room.code);
         return;
       }
       if (room.hostSeat === membership.seat) {
-        room.hostSeat = Math.min(...room.players.keys());
+        room.hostSeat = Math.min(...remainingHumans.map((player) => player.seat));
+      }
+      if (room.botTimer) {
+        clearTimeout(room.botTimer);
+        room.botTimer = undefined;
       }
       room.match = null;
       broadcast(room);

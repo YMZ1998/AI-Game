@@ -105,5 +105,9 @@ test("provides a local-only Doudizhu room server and CSV score ledger", async ()
   assert.match(serverSource, /时间,房间,玩家,座位,身份,结果,倍数,本局积分,累计积分/);
   assert.match(serverSource, /message\.type === "create"/);
   assert.match(serverSource, /message\.type === "join"/);
+  assert.match(serverSource, /message\.type === "add_bot"/);
+  assert.match(serverSource, /message\.type === "remove_bot"/);
+  assert.match(serverSource, /chooseBotBid/);
+  assert.match(serverSource, /scheduleBots/);
   assert.match(serverSource, /message\.type === "play"/);
 });

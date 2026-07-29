@@ -10,7 +10,13 @@ type Card = {
   suit: Suit;
   color: "red" | "black" | "joker-red" | "joker-black";
 };
-type Player = { seat: number; name: string; score: number; cardCount: number };
+type Player = {
+  seat: number;
+  name: string;
+  score: number;
+  cardCount: number;
+  isBot: boolean;
+};
 type LastPlay = {
   player: number;
   cards: Card[];
@@ -79,10 +85,10 @@ function LanCard({
   );
 }
 
-function Portrait({ danger = 0 }: { danger?: number }) {
+function Portrait({ danger = 0, bot = false }: { danger?: number; bot?: boolean }) {
   return (
-    <div className="avatar-ring">
-      <div className="avatar portrait-face" aria-hidden="true">
+    <div className={`avatar-ring ${bot ? "bot-avatar" : ""}`}>
+      <div className={`avatar portrait-face ${bot ? "bot" : ""}`} aria-hidden="true">
         <span className="portrait-hair" />
         <span className="portrait-eyes" />
       </div>
@@ -123,6 +129,7 @@ function ScoreTable({
               <tr key={player.seat}>
                 <td>
                   {player.name}
+                  {player.isBot ? "（人机）" : ""}
                   {player.seat === room.seat ? "（你）" : ""}
                 </td>
                 <td>
@@ -430,19 +437,48 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
               const player = room.players.find((item) => item.seat === seat);
               return (
                 <article
-                  className={`waiting-seat ${player ? "occupied" : ""}`}
+                  className={`waiting-seat ${player ? "occupied" : ""} ${
+                    player?.isBot ? "bot-seat" : ""
+                  }`}
                   key={seat}
                 >
-                  {player ? <Portrait /> : <span className="empty-avatar">+</span>}
+                  {player ? (
+                    <Portrait bot={player.isBot} />
+                  ) : room.seat === room.hostSeat ? (
+                    <button
+                      type="button"
+                      className="bot-seat-action"
+                      onClick={() => send({ type: "add_bot", seat })}
+                      aria-label={`在座位 ${seat + 1} 添加人机`}
+                    >
+                      <span>AI</span>
+                      添加人机
+                    </button>
+                  ) : (
+                    <span className="empty-avatar">+</span>
+                  )}
                   <span>{seatLabel(seat)}</span>
                   <strong>{player?.name ?? "等待加入"}</strong>
+                  {player?.isBot && <i className="bot-badge">人机</i>}
                   {seat === room.hostSeat && <em>房主</em>}
+                  {player?.isBot && room.seat === room.hostSeat && (
+                    <button
+                      type="button"
+                      className="remove-bot"
+                      onClick={() => send({ type: "remove_bot", seat })}
+                    >
+                      移除
+                    </button>
+                  )}
                 </article>
               );
             })}
           </div>
           <div className="waiting-actions">
-            <p>{notice || `已有 ${room.players.length}/3 位玩家入座`}</p>
+            <p>
+              {notice ||
+                `已有 ${room.players.length}/3 个席位就绪，可用人机补齐空位`}
+            </p>
             <p className="lan-address">
               朋友访问：{networkOrigin || "正在获取局域网地址…"}
             </p>
@@ -505,10 +541,16 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
             }`}
             key={player.seat}
           >
-            <Portrait danger={player.cardCount <= 2 ? player.cardCount : 0} />
+            <Portrait
+              danger={player.cardCount <= 2 ? player.cardCount : 0}
+              bot={player.isBot}
+            />
             <div className="player-meta">
               <strong>{player.name}</strong>
-              <span>{match.landlord === player.seat ? "地主" : "农民"}</span>
+              <span>
+                {match.landlord === player.seat ? "地主" : "农民"}
+                {player.isBot ? " · 人机" : ""}
+              </span>
               <small>积分 {player.score}</small>
             </div>
             <div className="card-count">
