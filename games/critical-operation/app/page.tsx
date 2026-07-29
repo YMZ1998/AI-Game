@@ -300,7 +300,7 @@ function drawBot(
   context.save();
   const stride = bot.alerted ? Math.sin(now / 115 + bot.id * 1.7) * 3 : 0;
   context.translate(screenX, centerY + Math.abs(stride) * 0.5);
-  const scale = size / 120;
+  const scale = size / 160;
   context.scale(scale, scale);
 
   context.fillStyle = "rgba(0,0,0,0.32)";
@@ -309,34 +309,34 @@ function drawBot(
   context.fill();
 
   context.save();
-  context.translate(-17, 27);
+  context.translate(-15, 27);
   context.rotate(-0.04 + stride * 0.008);
   context.fillStyle = "#171d1f";
-  context.fillRect(-13, 0, 24, 57);
+  context.fillRect(-10, 0, 20, 57);
   context.fillStyle = "#30383a";
-  context.fillRect(-16, 47, 30, 13);
+  context.fillRect(-13, 47, 26, 13);
   context.restore();
 
   context.save();
-  context.translate(17, 27);
+  context.translate(15, 27);
   context.rotate(0.04 - stride * 0.008);
   context.fillStyle = "#171d1f";
-  context.fillRect(-11, 0, 24, 57);
+  context.fillRect(-10, 0, 20, 57);
   context.fillStyle = "#30383a";
-  context.fillRect(-14, 47, 30, 13);
+  context.fillRect(-13, 47, 26, 13);
   context.restore();
 
   context.fillStyle = bot.flash > 0 ? "#d9c59e" : "#43423d";
   context.beginPath();
-  context.moveTo(-35, -4);
-  context.lineTo(-27, 43);
-  context.lineTo(27, 43);
-  context.lineTo(35, -4);
+  context.moveTo(-31, -5);
+  context.lineTo(-25, 43);
+  context.lineTo(25, 43);
+  context.lineTo(31, -5);
   context.closePath();
   context.fill();
 
   context.fillStyle = "#242a2b";
-  context.fillRect(-39, 2, 78, 28);
+  context.fillRect(-35, 2, 70, 28);
   context.fillStyle = "#6f6653";
   context.fillRect(-23, 6, 46, 19);
   context.fillStyle = "#b1a57f";
@@ -345,38 +345,69 @@ function drawBot(
 
   context.fillStyle = "#806b52";
   context.beginPath();
-  context.arc(0, -36, 25, 0, Math.PI * 2);
+  context.arc(0, -37, 20, 0, Math.PI * 2);
   context.fill();
   context.fillStyle = "#202526";
   context.beginPath();
-  context.arc(0, -45, 27, Math.PI, Math.PI * 2);
-  context.lineTo(27, -36);
-  context.lineTo(-27, -36);
+  context.arc(0, -45, 22, Math.PI, Math.PI * 2);
+  context.lineTo(22, -36);
+  context.lineTo(-22, -36);
   context.closePath();
   context.fill();
 
   context.fillStyle = "#101516";
-  context.fillRect(-25, -40, 50, 10);
+  context.fillRect(-20, -40, 40, 9);
   context.fillStyle = "#d3b56f";
   context.fillRect(-15, -37, 12, 4);
   context.fillRect(4, -37, 12, 4);
 
+  context.fillStyle = "#343a39";
+  context.beginPath();
+  context.moveTo(-31, 1);
+  context.lineTo(-12, 12);
+  context.lineTo(-3, 19);
+  context.lineTo(-8, 25);
+  context.lineTo(-27, 15);
+  context.closePath();
+  context.fill();
+  context.beginPath();
+  context.moveTo(31, 1);
+  context.lineTo(12, 12);
+  context.lineTo(3, 19);
+  context.lineTo(8, 25);
+  context.lineTo(27, 15);
+  context.closePath();
+  context.fill();
+
   context.save();
-  context.translate(5, 11);
-  context.rotate(-0.06);
-  context.fillStyle = "#111718";
-  context.fillRect(-48, -7, 97, 14);
+  context.translate(0, 12);
   context.fillStyle = "#4c5c61";
-  context.fillRect(-24, -12, 51, 10);
-  context.fillStyle = "#0a0f10";
-  context.fillRect(42, -4, 38, 7);
+  context.beginPath();
+  context.moveTo(-27, -7);
+  context.lineTo(27, -7);
+  context.lineTo(20, 12);
+  context.lineTo(-20, 12);
+  context.closePath();
+  context.fill();
+  context.fillStyle = "#111718";
+  context.fillRect(-12, 8, 24, 17);
+  context.fillStyle = "#05090b";
+  context.beginPath();
+  context.ellipse(0, 27, 14, 8, 0, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = "#879296";
+  context.lineWidth = 2;
+  context.stroke();
   if (bot.shotFlash > 0) {
     context.fillStyle = `rgba(255, 209, 105, ${Math.min(1, bot.shotFlash * 10)})`;
     context.beginPath();
-    context.moveTo(82, 0);
-    context.lineTo(112, -17);
-    context.lineTo(102, 0);
-    context.lineTo(114, 16);
+    context.moveTo(0, 28);
+    context.lineTo(-24, 47);
+    context.lineTo(-7, 43);
+    context.lineTo(0, 63);
+    context.lineTo(8, 43);
+    context.lineTo(25, 48);
+    context.lineTo(11, 31);
     context.closePath();
     context.fill();
   }
@@ -552,8 +583,26 @@ function renderScene(
     if (Math.abs(relativeAngle) > FOV * 0.7) return;
 
     const screenX = VIEW_WIDTH / 2 + (relativeAngle / FOV) * VIEW_WIDTH;
+    const correctedDistance = Math.max(
+      0.52,
+      distance * Math.cos(relativeAngle),
+    );
     const size =
-      (VIEW_HEIGHT / distance) * (sprite.kind === "bot" ? 0.9 : 0.62);
+      sprite.kind === "bot"
+        ? Math.max(
+            24,
+            Math.min(
+              VIEW_HEIGHT * 0.7,
+              (VIEW_HEIGHT * 0.76) / correctedDistance,
+            ),
+          )
+        : Math.max(
+            20,
+            Math.min(
+              VIEW_HEIGHT * 0.38,
+              (VIEW_HEIGHT * 0.45) / correctedDistance,
+            ),
+          );
     const depthIndex = Math.max(
       0,
       Math.min(VIEW_WIDTH - 1, Math.round(screenX)),
@@ -561,7 +610,7 @@ function renderScene(
     if (distance > depthBuffer[depthIndex] + 0.3) return;
 
     if (sprite.kind === "bot" && sprite.bot) {
-      drawBot(context, screenX, horizon + size * 0.12, size, sprite.bot, now);
+      drawBot(context, screenX, horizon - size * 0.045, size, sprite.bot, now);
     } else {
       drawDevice(
         context,
@@ -576,68 +625,90 @@ function renderScene(
   const bob = game.walking ? Math.sin(game.movePhase * 0.5) * 5 : 0;
   const reloadArc =
     game.reloadTime > 0 ? Math.sin((game.reloadTime / 1.55) * Math.PI) : 0;
+  const weaponRootX =
+    VIEW_WIDTH * 0.76 +
+    Math.sin(game.movePhase * 0.5) * 4 +
+    reloadArc * 42;
+  const weaponRootY =
+    VIEW_HEIGHT + 58 + bob + game.recoil * 42 + reloadArc * 48;
+  const weaponAimX = VIEW_WIDTH / 2;
+  const weaponAimY = VIEW_HEIGHT / 2;
+  const weaponAngle =
+    Math.atan2(weaponAimY - weaponRootY, weaponAimX - weaponRootX) -
+    game.recoil * 0.045 +
+    reloadArc * 0.34;
+  const weaponLength =
+    Math.hypot(weaponAimX - weaponRootX, weaponAimY - weaponRootY) * 0.72;
+
   context.save();
-  context.translate(
-    VIEW_WIDTH / 2 +
-      95 +
-      Math.sin(game.movePhase * 0.5) * 3 +
-      reloadArc * 34,
-    VIEW_HEIGHT + 8 + bob + game.recoil * 34 + reloadArc * 42,
-  );
-  context.rotate(-0.065 - game.recoil * 0.12 + reloadArc * 0.32);
+  context.translate(weaponRootX, weaponRootY);
+  context.rotate(weaponAngle);
 
   context.fillStyle = "#84664f";
   context.beginPath();
-  context.ellipse(-18, -22, 79, 38, -0.2, 0, Math.PI * 2);
+  context.ellipse(72, -24, 67, 30, -0.08, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.ellipse(170, -17, 45, 24, 0.12, 0, Math.PI * 2);
   context.fill();
 
-  context.fillStyle = "#121a1e";
-  context.fillRect(-105, -90, 192, 54);
-  context.fillStyle = "#263238";
-  context.fillRect(-96, -85, 179, 17);
-  context.fillStyle = "#3e4d53";
-  context.fillRect(-48, -106, 205, 22);
-  context.fillStyle = "#0c1216";
-  context.fillRect(126, -101, 116, 13);
-  context.fillStyle = "#67767a";
-  context.fillRect(151, -99, 72, 5);
-
-  context.fillStyle = "#0a1013";
+  context.fillStyle = "#11191d";
   context.beginPath();
-  context.moveTo(-39, -36);
-  context.lineTo(13, -36);
-  context.lineTo(26, 44);
-  context.lineTo(-22, 44);
+  context.moveTo(-12, -30);
+  context.lineTo(202, -24);
+  context.lineTo(220, 15);
+  context.lineTo(22, 31);
+  context.closePath();
+  context.fill();
+  context.fillStyle = "#2f3d42";
+  context.beginPath();
+  context.moveTo(30, -27);
+  context.lineTo(210, -20);
+  context.lineTo(204, -8);
+  context.lineTo(42, -5);
   context.closePath();
   context.fill();
 
-  context.fillStyle = "#151e22";
-  context.fillRect(-22, -129, 56, 25);
-  context.fillStyle = "#859397";
-  context.fillRect(-13, -125, 38, 4);
-  context.fillStyle = "#05090b";
-  context.fillRect(-6, -138, 23, 15);
+  context.fillStyle = "#0a1013";
+  context.beginPath();
+  context.moveTo(76, 20);
+  context.lineTo(126, 17);
+  context.lineTo(113, 83);
+  context.lineTo(70, 86);
+  context.closePath();
+  context.fill();
+  context.fillStyle = "#3e4d53";
+  context.beginPath();
+  context.moveTo(198, -15);
+  context.lineTo(weaponLength - 6, -7);
+  context.lineTo(weaponLength - 6, 7);
+  context.lineTo(202, 10);
+  context.closePath();
+  context.fill();
+  context.fillStyle = "#0a0f11";
+  context.fillRect(weaponLength - 13, -11, 17, 22);
 
+  context.fillStyle = "#151e22";
+  context.fillRect(112, -52, 58, 27);
+  context.fillStyle = "#859397";
+  context.fillRect(120, -48, 42, 4);
+  context.fillStyle = "#05090b";
+  context.fillRect(132, -64, 23, 15);
   context.fillStyle = "#66e0c2";
-  context.fillRect(-88, -80, 34, 5);
+  context.fillRect(34, -19, 34, 5);
   context.fillStyle = "#f2b84b";
-  context.fillRect(35, -100, 44, 4);
+  context.fillRect(178, -13, 36, 4);
 
   if (game.muzzleFlash > 0) {
     const flashAlpha = Math.min(1, game.muzzleFlash * 12);
     context.fillStyle = `rgba(255, 225, 149, ${flashAlpha})`;
     context.beginPath();
-    context.moveTo(244, -95);
-    context.lineTo(302, -131);
-    context.lineTo(283, -96);
-    context.lineTo(306, -60);
-    context.lineTo(258, -84);
+    context.moveTo(weaponLength, 0);
+    context.lineTo(weaponLength + 52, -31);
+    context.lineTo(weaponLength + 36, -3);
+    context.lineTo(weaponLength + 58, 27);
+    context.lineTo(weaponLength + 18, 12);
     context.closePath();
-    context.fill();
-
-    context.fillStyle = `rgba(242, 184, 75, ${flashAlpha * 0.8})`;
-    context.beginPath();
-    context.ellipse(46, -70, 9, 4, -0.4, 0, Math.PI * 2);
     context.fill();
   }
   context.restore();
