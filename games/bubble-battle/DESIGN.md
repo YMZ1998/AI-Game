@@ -67,6 +67,18 @@ components:
     typography: "{typography.label-caps}"
     rounded: "{rounded.pill}"
     padding: 12px
+  mode-selector-active:
+    backgroundColor: "{colors.accent-alt}"
+    textColor: "{colors.primary}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.md}"
+    padding: 12px
+  duel-player:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.md}"
+    padding: 12px
   reward-badge:
     backgroundColor: "{colors.reward}"
     textColor: "{colors.primary}"
@@ -113,6 +125,8 @@ Prefer circles, pills, and generous rounded rectangles. Preserve a crisp silhoue
 Primary actions use cyan pills; competitive states use pink; rewards use gold. Panels use pale surfaces on the navy game shell. Focus indicators must stay visible against both light panels and the dark playfield.
 
 Power-up status uses compact pill chips over the playfield. Every chip combines a label with a countdown or action key so color is never the only status signal.
+
+Local-versus mode uses a two-option segmented selector. The active mode uses the pink competitive accent, while player status cards always pair cyan/pink markers with explicit P1/P2 labels and control text so team identity never depends on color alone.
 
 ## Do's and Don'ts
 

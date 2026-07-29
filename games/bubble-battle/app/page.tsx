@@ -22,6 +22,8 @@ const HEIGHT = ROWS * TILE;
 const ROUND_SECONDS = 120;
 
 type Status = "ready" | "playing" | "levelComplete" | "gameOver";
+type GameMode = "solo" | "versus";
+type Winner = "player1" | "player2" | "draw" | null;
 type Direction = "up" | "down" | "left" | "right";
 type PowerType =
   | "speed"
@@ -55,7 +57,7 @@ type Bomb = {
   fuse: number;
   range: number;
   remote: boolean;
-  owner: "player" | number;
+  owner: "player" | "player2" | number;
 };
 
 type Flame = {
@@ -73,9 +75,14 @@ type PowerUp = {
 
 type Runtime = {
   status: Status;
+  mode: GameMode;
+  winner: Winner;
   mapName: string;
   board: number[][];
   player: Actor;
+  player2: Actor | null;
+  player1Alive: boolean;
+  player2Alive: boolean;
   enemies: Enemy[];
   bombs: Bomb[];
   flames: Flame[];
@@ -98,6 +105,10 @@ type Runtime = {
 
 type Hud = {
   status: Status;
+  mode: GameMode;
+  winner: Winner;
+  player1Alive: boolean;
+  player2Alive: boolean;
   mapName: string;
   level: number;
   score: number;
@@ -111,6 +122,8 @@ type Hud = {
   magnet: number;
   remoteCharges: number;
   remoteBombs: number;
+  player1Bombs: number;
+  player2Bombs: number;
 };
 
 const directions: Record<Direction, { x: number; y: number }> = {
@@ -182,7 +195,12 @@ function makeEnemy(
   };
 }
 
-function createRuntime(level = 1, score = 0, lives = 3): Runtime {
+function createRuntime(
+  level = 1,
+  score = 0,
+  lives = 3,
+  mode: GameMode = "solo",
+): Runtime {
   const enemySpawns = [
     [13, 9],
     [1, 9],
@@ -194,27 +212,39 @@ function createRuntime(level = 1, score = 0, lives = 3): Runtime {
 
   return {
     status: "ready",
+    mode,
+    winner: null,
     mapName: getMapName(level),
     board: buildMap(level),
     player: makeActor(1, 1, "#25a9ff", 172),
-    enemies: enemySpawns
-      .slice(0, enemyCount)
-      .map(([col, row], index) =>
-        makeEnemy(
-          index + 1,
-          col,
-          row,
-          colors[index],
-          Math.min(150, 94 + level * 9),
-        ),
-      ),
+    player2:
+      mode === "versus" ? makeActor(13, 9, "#ff5e7d", 172) : null,
+    player1Alive: true,
+    player2Alive: mode === "versus",
+    enemies:
+      mode === "solo"
+        ? enemySpawns
+            .slice(0, enemyCount)
+            .map(([col, row], index) =>
+              makeEnemy(
+                index + 1,
+                col,
+                row,
+                colors[index],
+                Math.min(150, 94 + level * 9),
+              ),
+            )
+        : [],
     bombs: [],
     flames: [],
     powerUps: [],
     level,
     score,
     lives,
-    timeLeft: Math.max(75, ROUND_SECONDS - (level - 1) * 8),
+    timeLeft:
+      mode === "versus"
+        ? 90
+        : Math.max(75, ROUND_SECONDS - (level - 1) * 8),
     bombRange: 2,
     maxBombs: 1,
     shield: 0,
@@ -537,6 +567,58 @@ function moveActor(
   }
 }
 
+type ControlScheme = Record<Direction, readonly string[]>;
+
+const soloControls: ControlScheme = {
+  up: ["ArrowUp", "KeyW"],
+  down: ["ArrowDown", "KeyS"],
+  left: ["ArrowLeft", "KeyA"],
+  right: ["ArrowRight", "KeyD"],
+};
+
+const playerOneControls: ControlScheme = {
+  up: ["KeyW"],
+  down: ["KeyS"],
+  left: ["KeyA"],
+  right: ["KeyD"],
+};
+
+const playerTwoControls: ControlScheme = {
+  up: ["ArrowUp"],
+  down: ["ArrowDown"],
+  left: ["ArrowLeft"],
+  right: ["ArrowRight"],
+};
+
+function moveControlledActor(
+  runtime: Runtime,
+  actor: Actor,
+  keys: ReadonlySet<string>,
+  controls: ControlScheme,
+  delta: number,
+) {
+  let dx = 0;
+  let dy = 0;
+  if (controls.left.some((code) => keys.has(code))) dx -= 1;
+  if (controls.right.some((code) => keys.has(code))) dx += 1;
+  if (controls.up.some((code) => keys.has(code))) dy -= 1;
+  if (controls.down.some((code) => keys.has(code))) dy += 1;
+  if (dx === 0 && dy === 0) return;
+
+  const length = Math.hypot(dx, dy);
+  dx /= length;
+  dy /= length;
+  actor.direction =
+    Math.abs(dx) > Math.abs(dy)
+      ? dx > 0
+        ? "right"
+        : "left"
+      : dy > 0
+        ? "down"
+        : "up";
+  moveActor(runtime, actor, dx, dy, delta);
+}
+
 function roundedRect(
   context: CanvasRenderingContext2D,
   x: number,
@@ -640,6 +722,7 @@ function drawActor(
   faded = false,
   shield = 0,
   frozen = false,
+  label?: string,
 ) {
   const bounce = Math.sin(time * 7 + actor.x * 0.01) * 1.6;
   context.save();
@@ -695,6 +778,13 @@ function drawActor(
     context.fillStyle = "#ff5c72";
     roundedRect(context, -8, -38, 16, 10, 4);
     context.fill();
+    if (label) {
+      context.fillStyle = "#ffffff";
+      context.font = "900 9px Arial";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(label, 0, -32.5);
+    }
   } else {
     context.fillStyle = "#fff";
     context.globalAlpha *= 0.7;
@@ -724,10 +814,11 @@ function drawBomb(
   context.translate(x, y);
   context.scale(pulse, pulse);
   const gradient = context.createRadialGradient(-9, -10, 2, 0, 0, 27);
+  const playerTwoBomb = bomb.owner === "player2";
   gradient.addColorStop(0, "#ffffff");
-  gradient.addColorStop(0.15, "#8beeff");
-  gradient.addColorStop(0.65, "#25b8ef");
-  gradient.addColorStop(1, "#0874c7");
+  gradient.addColorStop(0.15, playerTwoBomb ? "#ffc5d2" : "#8beeff");
+  gradient.addColorStop(0.65, playerTwoBomb ? "#ff5f87" : "#25b8ef");
+  gradient.addColorStop(1, playerTwoBomb ? "#c6294d" : "#0874c7");
   context.fillStyle = gradient;
   context.beginPath();
   context.arc(0, 1, 23, 0, Math.PI * 2);
@@ -825,14 +916,30 @@ function drawScene(context: CanvasRenderingContext2D, runtime: Runtime) {
       runtime.freezeTimer > 0,
     ),
   );
-  drawActor(
-    context,
-    runtime.player,
-    time,
-    true,
-    runtime.invulnerable > 0,
-    runtime.shield,
-  );
+  if (runtime.player1Alive) {
+    drawActor(
+      context,
+      runtime.player,
+      time,
+      true,
+      runtime.invulnerable > 0,
+      runtime.shield,
+      false,
+      runtime.mode === "versus" ? "P1" : undefined,
+    );
+  }
+  if (runtime.player2 && runtime.player2Alive) {
+    drawActor(
+      context,
+      runtime.player2,
+      time,
+      true,
+      false,
+      0,
+      false,
+      "P2",
+    );
+  }
   drawFlames(context, runtime.flames);
 }
 
@@ -848,9 +955,14 @@ export default function Home() {
   const audioRef = useRef<AudioContext | null>(null);
   const mutedRef = useRef(false);
   const [muted, setMuted] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<GameMode>("solo");
   const [bestScore, setBestScore] = useState(0);
   const [hud, setHud] = useState<Hud>({
     status: "ready",
+    mode: "solo",
+    winner: null,
+    player1Alive: true,
+    player2Alive: false,
     mapName: getMapName(1),
     level: 1,
     score: 0,
@@ -864,12 +976,18 @@ export default function Home() {
     magnet: 0,
     remoteCharges: 0,
     remoteBombs: 0,
+    player1Bombs: 0,
+    player2Bombs: 0,
   });
 
   const syncHud = useCallback(() => {
     const runtime = runtimeRef.current;
     setHud({
       status: runtime.status,
+      mode: runtime.mode,
+      winner: runtime.winner,
+      player1Alive: runtime.player1Alive,
+      player2Alive: runtime.player2Alive,
       mapName: runtime.mapName,
       level: runtime.level,
       score: runtime.score,
@@ -883,6 +1001,12 @@ export default function Home() {
       magnet: Math.ceil(runtime.magnetTimer),
       remoteCharges: runtime.remoteCharges,
       remoteBombs: runtime.bombs.filter((bomb) => bomb.remote).length,
+      player1Bombs: runtime.bombs.filter(
+        (bomb) => bomb.owner === "player",
+      ).length,
+      player2Bombs: runtime.bombs.filter(
+        (bomb) => bomb.owner === "player2",
+      ).length,
     });
   }, []);
 
@@ -927,12 +1051,22 @@ export default function Home() {
   }, []);
 
   const resetGame = useCallback(() => {
-    runtimeRef.current = createRuntime();
+    runtimeRef.current = createRuntime(1, 0, 3, selectedMode);
     runtimeRef.current.status = "playing";
     keysRef.current.clear();
     playTone(520, 0.12, "triangle");
     syncHud();
-  }, [playTone, syncHud]);
+  }, [playTone, selectedMode, syncHud]);
+
+  const selectMode = useCallback(
+    (mode: GameMode) => {
+      setSelectedMode(mode);
+      runtimeRef.current = createRuntime(1, 0, 3, mode);
+      keysRef.current.clear();
+      syncHud();
+    },
+    [syncHud],
+  );
 
   const nextLevel = useCallback(() => {
     const current = runtimeRef.current;
@@ -940,6 +1074,7 @@ export default function Home() {
       current.level + 1,
       current.score + 500,
       Math.min(5, current.lives + 1),
+      "solo",
     );
     runtimeRef.current.status = "playing";
     playTone(720, 0.14, "triangle");
@@ -969,7 +1104,9 @@ export default function Home() {
   const detonateRemote = useCallback(() => {
     const runtime = runtimeRef.current;
     if (runtime.status !== "playing") return;
-    const remoteBombs = runtime.bombs.filter((bomb) => bomb.remote);
+    const remoteBombs = runtime.bombs.filter(
+      (bomb) => bomb.remote && bomb.owner === "player",
+    );
     if (!remoteBombs.length) return;
     remoteBombs.forEach((bomb) => {
       bomb.fuse = 0;
@@ -977,23 +1114,34 @@ export default function Home() {
     playTone(460, 0.08, "square");
   }, [playTone]);
 
-  const placeBomb = useCallback(() => {
+  const placeBomb = useCallback((playerNumber: 1 | 2 = 1) => {
     const runtime = runtimeRef.current;
+    const isPlayerTwo = playerNumber === 2;
+    const actor = isPlayerTwo ? runtime.player2 : runtime.player;
+    const alive = isPlayerTwo
+      ? runtime.player2Alive
+      : runtime.player1Alive;
+    const owner = isPlayerTwo ? "player2" : "player";
     if (
       runtime.status !== "playing" ||
-      runtime.bombs.filter((bomb) => bomb.owner === "player").length >=
+      !actor ||
+      !alive ||
+      runtime.bombs.filter((bomb) => bomb.owner === owner).length >=
         runtime.maxBombs
     ) {
       return;
     }
-    const col = Math.floor(runtime.player.x / TILE);
-    const row = Math.floor(runtime.player.y / TILE);
+    const col = Math.floor(actor.x / TILE);
+    const row = Math.floor(actor.y / TILE);
     if (
       runtime.bombs.some((bomb) => bomb.col === col && bomb.row === row)
     ) {
       return;
     }
-    const remote = runtime.remoteCharges > 0;
+    const remote =
+      !isPlayerTwo &&
+      runtime.mode === "solo" &&
+      runtime.remoteCharges > 0;
     runtime.bombs.push({
       id: runtime.nextBombId,
       col,
@@ -1001,7 +1149,7 @@ export default function Home() {
       fuse: remote ? 12 : 2.15,
       range: runtime.bombRange,
       remote,
-      owner: "player",
+      owner,
     });
     if (remote) runtime.remoteCharges -= 1;
     runtime.nextBombId += 1;
@@ -1028,9 +1176,11 @@ export default function Home() {
           cells.push([col, row]);
           if (tile === 2) {
             runtime.board[row][col] = 0;
-            if (bomb.owner === "player") runtime.score += 30;
+            if (runtime.mode === "solo" && bomb.owner === "player") {
+              runtime.score += 30;
+            }
             const dropRoll = (col * 31 + row * 17 + bomb.id * 13) % 100;
-            if (dropRoll < 43) {
+            if (runtime.mode === "solo" && dropRoll < 43) {
               const poolIndex =
                 (col * 7 + row * 11 + bomb.id * 5 + runtime.level) %
                 powerDropPool.length;
@@ -1073,7 +1223,25 @@ export default function Home() {
 
       const playerCol = Math.floor(runtime.player.x / TILE);
       const playerRow = Math.floor(runtime.player.y / TILE);
-      if (
+      if (runtime.mode === "versus") {
+        let playerHit = false;
+        if (
+          runtime.player1Alive &&
+          keys.has(flameKey(playerCol, playerRow))
+        ) {
+          runtime.player1Alive = false;
+          playerHit = true;
+        }
+        if (runtime.player2 && runtime.player2Alive) {
+          const player2Col = Math.floor(runtime.player2.x / TILE);
+          const player2Row = Math.floor(runtime.player2.y / TILE);
+          if (keys.has(flameKey(player2Col, player2Row))) {
+            runtime.player2Alive = false;
+            playerHit = true;
+          }
+        }
+        playTone(playerHit ? 105 : 150, playerHit ? 0.22 : 0.12, "square");
+      } else if (
         runtime.invulnerable <= 0 &&
         keys.has(flameKey(playerCol, playerRow))
       ) {
@@ -1106,18 +1274,28 @@ export default function Home() {
           "ArrowLeft",
           "ArrowRight",
           "Space",
+          "KeyF",
+          "Enter",
         ].includes(event.code)
       ) {
         event.preventDefault();
       }
       keysRef.current.add(event.code);
-      if (event.code === "Space" && !event.repeat) placeBomb();
-      if (event.code === "KeyE" && !event.repeat) detonateRemote();
+      const runtime = runtimeRef.current;
       if (
         event.code === "Enter" &&
-        runtimeRef.current.status === "ready"
+        runtime.status === "ready"
       ) {
         resetGame();
+        return;
+      }
+      if (runtime.status !== "playing" || event.repeat) return;
+      if (runtime.mode === "versus") {
+        if (event.code === "Space" || event.code === "KeyF") placeBomb(1);
+        if (event.code === "Enter") placeBomb(2);
+      } else {
+        if (event.code === "Space") placeBomb(1);
+        if (event.code === "KeyE") detonateRemote();
       }
     };
     const up = (event: KeyboardEvent) => keysRef.current.delete(event.code);
@@ -1153,34 +1331,42 @@ export default function Home() {
         runtime.freezeTimer = Math.max(0, runtime.freezeTimer - delta);
         runtime.magnetTimer = Math.max(0, runtime.magnetTimer - delta);
 
-        let dx = 0;
-        let dy = 0;
         const keys = keysRef.current;
-        if (keys.has("ArrowLeft") || keys.has("KeyA")) dx -= 1;
-        if (keys.has("ArrowRight") || keys.has("KeyD")) dx += 1;
-        if (keys.has("ArrowUp") || keys.has("KeyW")) dy -= 1;
-        if (keys.has("ArrowDown") || keys.has("KeyS")) dy += 1;
-        if (dx !== 0 || dy !== 0) {
-          const length = Math.hypot(dx, dy);
-          dx /= length;
-          dy /= length;
-          runtime.player.direction =
-            Math.abs(dx) > Math.abs(dy)
-              ? dx > 0
-                ? "right"
-                : "left"
-              : dy > 0
-                ? "down"
-                : "up";
-          moveActor(runtime, runtime.player, dx, dy, delta);
+        if (runtime.player1Alive) {
+          moveControlledActor(
+            runtime,
+            runtime.player,
+            keys,
+            runtime.mode === "versus" ? playerOneControls : soloControls,
+            delta,
+          );
+        }
+        if (
+          runtime.mode === "versus" &&
+          runtime.player2 &&
+          runtime.player2Alive
+        ) {
+          moveControlledActor(
+            runtime,
+            runtime.player2,
+            keys,
+            playerTwoControls,
+            delta,
+          );
         }
 
         runtime.bombs.forEach((bomb) => {
           bomb.fuse -= delta;
         });
-        const exploding = runtime.bombs.filter((bomb) => bomb.fuse <= 0);
-        exploding.forEach((bomb) => explodeBomb(runtime, bomb));
-        const explodingIds = new Set(exploding.map((bomb) => bomb.id));
+        const explodingIds = new Set<number>();
+        let nextExplosion = runtime.bombs.find((bomb) => bomb.fuse <= 0);
+        while (nextExplosion) {
+          explodingIds.add(nextExplosion.id);
+          explodeBomb(runtime, nextExplosion);
+          nextExplosion = runtime.bombs.find(
+            (bomb) => bomb.fuse <= 0 && !explodingIds.has(bomb.id),
+          );
+        }
         runtime.bombs = runtime.bombs.filter(
           (bomb) => !explodingIds.has(bomb.id),
         );
@@ -1265,12 +1451,40 @@ export default function Home() {
           return false;
         });
 
-        if (runtime.lives <= 0 || runtime.timeLeft <= 0) {
+        if (
+          runtime.mode === "versus" &&
+          (!runtime.player1Alive ||
+            !runtime.player2Alive ||
+            runtime.timeLeft <= 0)
+        ) {
+          runtime.status = "gameOver";
+          runtime.timeLeft = Math.max(0, runtime.timeLeft);
+          runtime.winner =
+            !runtime.player1Alive && !runtime.player2Alive
+              ? "draw"
+              : !runtime.player1Alive
+                ? "player2"
+                : !runtime.player2Alive
+                  ? "player1"
+                  : "draw";
+          playTone(
+            runtime.winner === "draw" ? 330 : 880,
+            0.18,
+            "triangle",
+          );
+          syncHud();
+        } else if (
+          runtime.mode === "solo" &&
+          (runtime.lives <= 0 || runtime.timeLeft <= 0)
+        ) {
           runtime.status = "gameOver";
           runtime.timeLeft = Math.max(0, runtime.timeLeft);
           saveBest(runtime.score);
           syncHud();
-        } else if (runtime.enemies.length === 0) {
+        } else if (
+          runtime.mode === "solo" &&
+          runtime.enemies.length === 0
+        ) {
           runtime.levelClearDelay += delta;
           if (runtime.levelClearDelay >= 0.75) {
             runtime.status = "levelComplete";
@@ -1309,17 +1523,33 @@ export default function Home() {
     keysRef.current.delete(code);
   };
 
+  const versusResult =
+    hud.winner === "player1"
+      ? "P1 获胜！"
+      : hud.winner === "player2"
+        ? "P2 获胜！"
+        : "本局平手！";
   const overlayTitle =
     hud.status === "ready"
-      ? "水花开战！"
+      ? hud.mode === "versus"
+        ? "双人对战！"
+        : "水花开战！"
       : hud.status === "levelComplete"
         ? "清场成功！"
-        : "泡泡破了";
+        : hud.mode === "versus"
+          ? versusResult
+          : "泡泡破了";
   const overlayCopy =
     hud.status === "ready"
-      ? "穿过水上街区，放下泡泡困住捣蛋怪。小心，自己的水花也会伤到你！"
+      ? hud.mode === "versus"
+        ? "P1 使用 WASD 移动、F 放泡泡；P2 使用方向键移动、Enter 放泡泡。最后留在场上的玩家获胜！"
+        : "穿过水上街区，放下泡泡困住捣蛋怪。小心，自己的水花也会伤到你！"
       : hud.status === "levelComplete"
         ? `第 ${hud.level} 区已经恢复清凉，下一片街区会更热闹。`
+        : hud.mode === "versus"
+          ? hud.winner === "draw"
+            ? "双方同时被水花击中，或者倒计时结束仍未分出胜负。再来一局！"
+            : "漂亮的路线封锁！换个出生点思路，再来一场对决。"
         : hud.timeLeft <= 0
           ? "时间到！再来一局，找准路线连续引爆。"
           : "别被水花包围。记住先留好退路，再放泡泡！";
@@ -1348,8 +1578,10 @@ export default function Home() {
               <strong>{String(hud.level).padStart(2, "0")}</strong>
             </div>
             <div>
-              <span>捣蛋怪</span>
-              <strong>{hud.enemies}</strong>
+              <span>{hud.mode === "versus" ? "对战状态" : "捣蛋怪"}</span>
+              <strong>
+                {hud.mode === "versus" ? "P1 VS P2" : hud.enemies}
+              </strong>
             </div>
             <div className={hud.timeLeft <= 15 ? "danger" : ""}>
               <span>剩余时间</span>
@@ -1370,55 +1602,110 @@ export default function Home() {
 
         <div className="play-area">
           <aside className="side-panel">
-            <div className="player-card">
-              <div className="mini-avatar" aria-hidden="true">
-                <span />
-              </div>
-              <div>
-                <small>蓝仔</small>
-                <strong>水花队长</strong>
-              </div>
-            </div>
-            <div className="life-row" aria-label={`剩余 ${hud.lives} 条生命`}>
-              {Array.from({ length: 5 }, (_, index) => (
-                <span
-                  className={index < hud.lives ? "active" : ""}
-                  key={index}
+            {hud.mode === "versus" ? (
+              <div className="duel-roster" aria-label="双人对战状态">
+                <div
+                  className={`duel-player player-one ${hud.player1Alive ? "" : "eliminated"}`}
                 >
-                  ♥
-                </span>
-              ))}
-            </div>
-            <div className="ability-list">
-              <div>
-                <i className="ability-icon range">↔</i>
-                <span>水花范围</span>
-                <strong>{hud.range}</strong>
+                  <span className="duel-dot" aria-hidden="true" />
+                  <div>
+                    <small>P1 · WASD</small>
+                    <strong>{hud.player1Alive ? "准备战斗" : "已淘汰"}</strong>
+                  </div>
+                </div>
+                <div
+                  className={`duel-player player-two ${hud.player2Alive ? "" : "eliminated"}`}
+                >
+                  <span className="duel-dot" aria-hidden="true" />
+                  <div>
+                    <small>P2 · 方向键</small>
+                    <strong>{hud.player2Alive ? "准备战斗" : "已淘汰"}</strong>
+                  </div>
+                </div>
               </div>
-              <div>
-                <i className="ability-icon bubble">●</i>
-                <span>泡泡数量</span>
-                <strong>{hud.bubbles}</strong>
+            ) : (
+              <>
+                <div className="player-card">
+                  <div className="mini-avatar" aria-hidden="true">
+                    <span />
+                  </div>
+                  <div>
+                    <small>蓝仔</small>
+                    <strong>水花队长</strong>
+                  </div>
+                </div>
+                <div
+                  className="life-row"
+                  aria-label={`剩余 ${hud.lives} 条生命`}
+                >
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <span
+                      className={index < hud.lives ? "active" : ""}
+                      key={index}
+                    >
+                      ♥
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+            {hud.mode === "versus" ? (
+              <div className="versus-controls">
+                <div>
+                  <span>P1 放泡泡</span>
+                  <strong>
+                    <kbd>F</kbd> {hud.player1Bombs}/{hud.bubbles}
+                  </strong>
+                </div>
+                <div>
+                  <span>P2 放泡泡</span>
+                  <strong>
+                    <kbd>ENTER</kbd> {hud.player2Bombs}/{hud.bubbles}
+                  </strong>
+                </div>
               </div>
-              <div>
-                <i className="ability-icon shield">◇</i>
-                <span>护盾层数</span>
-                <strong>{hud.shield}</strong>
+            ) : (
+              <div className="ability-list">
+                <div>
+                  <i className="ability-icon range">↔</i>
+                  <span>水花范围</span>
+                  <strong>{hud.range}</strong>
+                </div>
+                <div>
+                  <i className="ability-icon bubble">●</i>
+                  <span>泡泡数量</span>
+                  <strong>{hud.bubbles}</strong>
+                </div>
+                <div>
+                  <i className="ability-icon shield">◇</i>
+                  <span>护盾层数</span>
+                  <strong>{hud.shield}</strong>
+                </div>
+                <div>
+                  <i className="ability-icon remote">R</i>
+                  <span>遥控器</span>
+                  <strong>{hud.remoteCharges}</strong>
+                </div>
               </div>
-              <div>
-                <i className="ability-icon remote">R</i>
-                <span>遥控器</span>
-                <strong>{hud.remoteCharges}</strong>
+            )}
+            {hud.mode === "solo" ? (
+              <>
+                <div className="best">
+                  <span>今日最佳</span>
+                  <strong>{bestScore.toLocaleString()}</strong>
+                </div>
+                <div className="tip">
+                  <span>战术提示</span>
+                  炸开橙色箱子可获得九种道具。遥控泡泡放下后，按 E
+                  主动起爆。
+                </div>
+              </>
+            ) : (
+              <div className="tip versus-tip">
+                <span>对战规则</span>
+                公平属性 · 禁用随机道具 · 水花可伤到自己
               </div>
-            </div>
-            <div className="best">
-              <span>今日最佳</span>
-              <strong>{bestScore.toLocaleString()}</strong>
-            </div>
-            <div className="tip">
-              <span>战术提示</span>
-              炸开橙色箱子可获得九种道具。遥控泡泡放下后，按 E 主动起爆。
-            </div>
+            )}
           </aside>
 
           <div className="canvas-shell">
@@ -1443,13 +1730,33 @@ export default function Home() {
                 <div className="overlay-card">
                   <div className="overlay-kicker">
                     {hud.status === "ready"
-                      ? `${hud.mapName} · DISTRICT 01`
+                      ? hud.mode === "versus"
+                        ? `${hud.mapName} · LOCAL VERSUS`
+                        : `${hud.mapName} · DISTRICT 01`
                       : hud.status === "levelComplete"
                         ? `${hud.mapName} · DISTRICT ${String(hud.level).padStart(2, "0")} CLEAR`
                         : "TRY ANOTHER ROUTE"}
                   </div>
                   <h2>{overlayTitle}</h2>
                   <p>{overlayCopy}</p>
+                  {hud.status !== "levelComplete" && (
+                    <div className="mode-selector" aria-label="选择游戏模式">
+                      <button
+                        type="button"
+                        aria-pressed={selectedMode === "solo"}
+                        onClick={() => selectMode("solo")}
+                      >
+                        单人闯关
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={selectedMode === "versus"}
+                        onClick={() => selectMode("versus")}
+                      >
+                        双人对战
+                      </button>
+                    </div>
+                  )}
                   <button
                     type="button"
                     className="start-button"
@@ -1458,20 +1765,31 @@ export default function Home() {
                     }
                   >
                     {hud.status === "ready"
-                      ? "进入街区"
+                      ? hud.mode === "versus"
+                        ? "开始对战"
+                        : "进入街区"
                       : hud.status === "levelComplete"
                         ? "下一街区"
                         : "重新开战"}
                     <span aria-hidden="true">→</span>
                   </button>
                   <div className="key-hint">
-                    <kbd>WASD</kbd>
-                    <kbd>方向键</kbd>
-                    移动
-                    <kbd>SPACE</kbd>
-                    放泡泡
-                    <kbd>E</kbd>
-                    遥控起爆
+                    {hud.mode === "versus" ? (
+                      <>
+                        <kbd>P1 · WASD + F</kbd>
+                        <kbd>P2 · 方向键 + ENTER</kbd>
+                      </>
+                    ) : (
+                      <>
+                        <kbd>WASD</kbd>
+                        <kbd>方向键</kbd>
+                        移动
+                        <kbd>SPACE</kbd>
+                        放泡泡
+                        <kbd>E</kbd>
+                        遥控起爆
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1485,9 +1803,9 @@ export default function Home() {
               type="button"
               className="up"
               aria-label="向上移动"
-              onPointerDown={(event) => holdDirection(event, "ArrowUp")}
-              onPointerUp={() => releaseDirection("ArrowUp")}
-              onPointerCancel={() => releaseDirection("ArrowUp")}
+              onPointerDown={(event) => holdDirection(event, "KeyW")}
+              onPointerUp={() => releaseDirection("KeyW")}
+              onPointerCancel={() => releaseDirection("KeyW")}
             >
               ↑
             </button>
@@ -1495,9 +1813,9 @@ export default function Home() {
               type="button"
               className="left"
               aria-label="向左移动"
-              onPointerDown={(event) => holdDirection(event, "ArrowLeft")}
-              onPointerUp={() => releaseDirection("ArrowLeft")}
-              onPointerCancel={() => releaseDirection("ArrowLeft")}
+              onPointerDown={(event) => holdDirection(event, "KeyA")}
+              onPointerUp={() => releaseDirection("KeyA")}
+              onPointerCancel={() => releaseDirection("KeyA")}
             >
               ←
             </button>
@@ -1505,9 +1823,9 @@ export default function Home() {
               type="button"
               className="down"
               aria-label="向下移动"
-              onPointerDown={(event) => holdDirection(event, "ArrowDown")}
-              onPointerUp={() => releaseDirection("ArrowDown")}
-              onPointerCancel={() => releaseDirection("ArrowDown")}
+              onPointerDown={(event) => holdDirection(event, "KeyS")}
+              onPointerUp={() => releaseDirection("KeyS")}
+              onPointerCancel={() => releaseDirection("KeyS")}
             >
               ↓
             </button>
@@ -1515,29 +1833,33 @@ export default function Home() {
               type="button"
               className="right"
               aria-label="向右移动"
-              onPointerDown={(event) => holdDirection(event, "ArrowRight")}
-              onPointerUp={() => releaseDirection("ArrowRight")}
-              onPointerCancel={() => releaseDirection("ArrowRight")}
+              onPointerDown={(event) => holdDirection(event, "KeyD")}
+              onPointerUp={() => releaseDirection("KeyD")}
+              onPointerCancel={() => releaseDirection("KeyD")}
             >
               →
             </button>
           </div>
           <div className="action-buttons">
-            <button
-              type="button"
-              className="remote-button"
-              onPointerDown={detonateRemote}
-              aria-label="遥控起爆"
-              disabled={hud.remoteBombs === 0}
-            >
-              R
-              <small>起爆</small>
-            </button>
+            {hud.mode === "solo" && (
+              <button
+                type="button"
+                className="remote-button"
+                onPointerDown={detonateRemote}
+                aria-label="遥控起爆"
+                disabled={hud.remoteBombs === 0}
+              >
+                R
+                <small>起爆</small>
+              </button>
+            )}
             <button
               type="button"
               className="bubble-button"
-              onPointerDown={placeBomb}
-              aria-label="放置泡泡"
+              onPointerDown={() => placeBomb(1)}
+              aria-label={
+                hud.mode === "versus" ? "P1 放置泡泡" : "放置泡泡"
+              }
             >
               <span />
               放泡泡
@@ -1550,8 +1872,16 @@ export default function Home() {
             <span className="live-dot" />
             {hud.mapName}正在营业
           </div>
-          <p>方向键 / WASD 移动 · 空格键放泡泡 · E 键遥控起爆</p>
-          <strong>最佳路线：先留退路</strong>
+          <p>
+            {hud.mode === "versus"
+              ? "P1：WASD + F · P2：方向键 + Enter"
+              : "方向键 / WASD 移动 · 空格键放泡泡 · E 键遥控起爆"}
+          </p>
+          <strong>
+            {hud.mode === "versus"
+              ? "本地双人 · 最后存活者获胜"
+              : "最佳路线：先留退路"}
+          </strong>
         </footer>
       </section>
     </main>
