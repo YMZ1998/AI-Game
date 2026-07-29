@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render() {
+async function render(pathname = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(`http://localhost${pathname}`, {
       headers: { accept: "text/html" },
     }),
     {
@@ -36,7 +37,7 @@ test("server-renders all six game tickets", async () => {
   assert.match(html, /临界行动/);
   assert.match(html, /AI 俄罗斯方块/);
   assert.match(html, /6 款游戏在线/);
-  assert.match(html, /night-patrol-police-chase\.ymz1998\.chatgpt\.site/);
+  assert.match(html, /href="\/play\/police-chase"/);
 });
 
 test("includes accessible game links and metadata", async () => {
@@ -48,6 +49,40 @@ test("includes accessible game links and metadata", async () => {
   assert.match(html, /alt="夜巡追捕游戏封面"/);
   assert.match(html, /aria-label="开始玩临界行动"/);
   assert.match(html, /aria-label="开始玩AI 俄罗斯方块"/);
-  assert.match(html, /localhost:3006/);
-  assert.match(html, /rel="noreferrer"/);
+  assert.match(html, /href="\/play\/tetris-game"/);
+  assert.doesNotMatch(html, /localhost:300(?:0|1|2|5|6)/);
+});
+
+test("renders the same-origin game shell", async () => {
+  const response = await render("/play/tetris-game");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /返回大厅/);
+  assert.match(html, /重新载入/);
+  assert.match(html, /全屏游玩/);
+  assert.match(html, /src="\/embedded\/tetris-game\/index\.html"/);
+});
+
+test("ships every game as a same-origin embedded build", async () => {
+  const slugs = [
+    "gold-miner",
+    "doudizhu",
+    "bubble-battle",
+    "police-chase",
+    "critical-operation",
+    "tetris-game",
+  ];
+
+  for (const slug of slugs) {
+    const indexUrl = new URL(
+      `../public/embedded/${slug}/index.html`,
+      import.meta.url,
+    );
+    const html = await readFile(indexUrl, "utf8");
+
+    assert.match(html, new RegExp(`/embedded/${slug}/assets/`));
+    assert.doesNotMatch(html, /localhost:\d+/);
+    assert.doesNotMatch(html, new RegExp(`/embedded/${slug}/embedded/`));
+  }
 });

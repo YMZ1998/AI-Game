@@ -1,67 +1,5 @@
 import Image from "next/image";
-
-const games = [
-  {
-    number: "01",
-    title: "黄金矿工",
-    english: "GOLD RUSH",
-    description: "看准时机放下抓钩，在岩层深处寻找金块与钻石。",
-    image: "/gold-miner.webp",
-    href: "http://localhost:3000/",
-    tags: ["街机", "单人", "50 秒"],
-    className: "gold-game",
-  },
-  {
-    number: "02",
-    title: "斗地主",
-    english: "LANDLORD",
-    description: "抢地主、组牌、压制，与两位电脑牌手打完一局。",
-    image: "/doudizhu.webp",
-    href: "http://localhost:3001/",
-    tags: ["棋牌", "三人", "策略"],
-    className: "card-game",
-  },
-  {
-    number: "03",
-    title: "泡泡堂",
-    english: "BUBBLE BATTLE",
-    description: "穿过清凉水上街区，放下泡泡、炸开箱子，用连锁水花击败捣蛋怪。",
-    image: "/bubble-battle.webp",
-    href: "http://localhost:3002/",
-    tags: ["动作", "单人", "连锁爆破"],
-    className: "bubble-game",
-  },
-  {
-    number: "04",
-    title: "夜巡追捕",
-    english: "NIGHT PATROL",
-    description: "摆动准星、发射手铐，在倒计时结束前抓住小偷并追回证物。",
-    image: "/police-chase.png",
-    href: "https://night-patrol-police-chase.ymz1998.chatgpt.site",
-    tags: ["街机", "单人", "连击追捕"],
-    className: "police-game",
-  },
-  {
-    number: "05",
-    title: "临界行动",
-    english: "CRITICAL OPERATION",
-    description: "突入港口仓库，以第一人称视角清除敌方机器人，并在倒计时结束前拆除装置。",
-    image: "/critical-operation.svg",
-    href: "http://localhost:3005/",
-    tags: ["第一人称", "战术射击", "拆弹"],
-    className: "tactical-game",
-  },
-  {
-    number: "06",
-    title: "AI 俄罗斯方块",
-    english: "STACK LAB",
-    description: "手动完成经典堆叠，或交给两步前瞻 AI，并实时观察它选择旋转与落点。",
-    image: "/tetris-game.webp",
-    href: "http://localhost:3006/",
-    tags: ["益智", "单人", "AI 自动"],
-    className: "tetris-game",
-  },
-];
+import { games } from "./game-catalog";
 
 export default function Home() {
   return (
@@ -130,9 +68,7 @@ export default function Home() {
           {games.map((game) => (
             <a
               className={`game-ticket ${game.className}`}
-              href={game.href}
-              target="_blank"
-              rel="noreferrer"
+              href={`/play/${game.slug}`}
               key={game.title}
               aria-label={`开始玩${game.title}`}
             >
