@@ -37,6 +37,11 @@ type Actor = {
   color: string;
 };
 
+type Enemy = Actor & {
+  id: number;
+  bombCooldown: number;
+};
+
 type Bomb = {
   id: number;
   col: number;
@@ -44,6 +49,7 @@ type Bomb = {
   fuse: number;
   range: number;
   remote: boolean;
+  owner: "player" | number;
 };
 
 type Flame = {
@@ -63,7 +69,7 @@ type Runtime = {
   status: Status;
   board: number[][];
   player: Actor;
-  enemies: Actor[];
+  enemies: Enemy[];
   bombs: Bomb[];
   flames: Flame[];
   powerUps: PowerUp[];
@@ -196,6 +202,20 @@ function makeActor(
   };
 }
 
+function makeEnemy(
+  id: number,
+  col: number,
+  row: number,
+  color: string,
+  speed: number,
+): Enemy {
+  return {
+    ...makeActor(col, row, color, speed),
+    id,
+    bombCooldown: 0.8 + id * 0.35,
+  };
+}
+
 function createRuntime(level = 1, score = 0, lives = 3): Runtime {
   const enemySpawns = [
     [13, 9],
@@ -213,7 +233,13 @@ function createRuntime(level = 1, score = 0, lives = 3): Runtime {
     enemies: enemySpawns
       .slice(0, enemyCount)
       .map(([col, row], index) =>
-        makeActor(col, row, colors[index], 92 + level * 7),
+        makeEnemy(
+          index + 1,
+          col,
+          row,
+          colors[index],
+          Math.min(150, 94 + level * 9),
+        ),
       ),
     bombs: [],
     flames: [],
@@ -277,6 +303,250 @@ function overlappingBombTiles(
       )
       .map((bomb) => `${bomb.col},${bomb.row}`),
   );
+}
+
+function blastPathIsClear(
+  runtime: Runtime,
+  fromCol: number,
+  fromRow: number,
+  toCol: number,
+  toRow: number,
+) {
+  if (fromCol !== toCol && fromRow !== toRow) return false;
+  const dx = Math.sign(toCol - fromCol);
+  const dy = Math.sign(toRow - fromRow);
+  const distance = Math.abs(toCol - fromCol) + Math.abs(toRow - fromRow);
+
+  for (let step = 1; step < distance; step += 1) {
+    if (runtime.board[fromRow + dy * step]?.[fromCol + dx * step] !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function tileThreat(runtime: Runtime, col: number, row: number) {
+  if (runtime.flames.some((flame) => flame.col === col && flame.row === row)) {
+    return 6;
+  }
+
+  return runtime.bombs.reduce((highest, bomb) => {
+    const distance = Math.abs(bomb.col - col) + Math.abs(bomb.row - row);
+    if (
+      distance > bomb.range ||
+      !blastPathIsClear(runtime, bomb.col, bomb.row, col, row)
+    ) {
+      return highest;
+    }
+    const urgency = bomb.fuse < 0.7 ? 5 : bomb.fuse < 1.35 ? 4 : 3;
+    return Math.max(highest, urgency);
+  }, 0);
+}
+
+function enemyBombRange(level: number) {
+  return Math.min(4, 1 + Math.ceil(level / 2));
+}
+
+function enemyBombFuse(level: number) {
+  return Math.max(1.45, 2.45 - level * 0.1);
+}
+
+function predictedBlastCells(
+  runtime: Runtime,
+  originCol: number,
+  originRow: number,
+  range: number,
+) {
+  const cells = new Set([flameKey(originCol, originRow)]);
+  Object.values(directions).forEach(({ x, y }) => {
+    for (let step = 1; step <= range; step += 1) {
+      const col = originCol + x * step;
+      const row = originRow + y * step;
+      const tile = runtime.board[row]?.[col];
+      if (tile === 1 || tile === undefined) break;
+      cells.add(flameKey(col, row));
+      if (tile === 2) break;
+    }
+  });
+  return cells;
+}
+
+function enemyHasEscapeRoute(
+  runtime: Runtime,
+  enemy: Enemy,
+  originCol: number,
+  originRow: number,
+  range: number,
+  fuse: number,
+) {
+  const blastCells = predictedBlastCells(
+    runtime,
+    originCol,
+    originRow,
+    range,
+  );
+  const maxSteps = Math.max(
+    2,
+    Math.floor((fuse * enemy.speed * 0.82) / TILE),
+  );
+  const queue = [{ col: originCol, row: originRow, steps: 0 }];
+  const visited = new Set([flameKey(originCol, originRow)]);
+
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current) break;
+    const key = flameKey(current.col, current.row);
+    if (
+      current.steps > 0 &&
+      !blastCells.has(key) &&
+      tileThreat(runtime, current.col, current.row) === 0
+    ) {
+      return true;
+    }
+    if (current.steps >= maxSteps) continue;
+
+    Object.values(directions).forEach(({ x, y }) => {
+      const col = current.col + x;
+      const row = current.row + y;
+      const nextKey = flameKey(col, row);
+      if (
+        visited.has(nextKey) ||
+        runtime.board[row]?.[col] !== 0 ||
+        runtime.bombs.some((bomb) => bomb.col === col && bomb.row === row)
+      ) {
+        return;
+      }
+      visited.add(nextKey);
+      queue.push({ col, row, steps: current.steps + 1 });
+    });
+  }
+  return false;
+}
+
+function shouldEnemyPlaceBomb(runtime: Runtime, enemy: Enemy) {
+  const col = Math.floor(enemy.x / TILE);
+  const row = Math.floor(enemy.y / TILE);
+  if (tileThreat(runtime, col, row) > 0) return false;
+
+  const playerCol = Math.floor(runtime.player.x / TILE);
+  const playerRow = Math.floor(runtime.player.y / TILE);
+  const playerDistance =
+    Math.abs(playerCol - col) + Math.abs(playerRow - row);
+  const attackDistance = Math.min(6, 3 + Math.floor(runtime.level / 2));
+  const playerInLine =
+    playerDistance <= attackDistance &&
+    blastPathIsClear(runtime, col, row, playerCol, playerRow);
+  const besideCrate = Object.values(directions).some(
+    ({ x, y }) => runtime.board[row + y]?.[col + x] === 2,
+  );
+
+  const hasAttackTarget = playerDistance <= 1 || playerInLine || besideCrate;
+  const range = enemyBombRange(runtime.level);
+  const fuse = enemyBombFuse(runtime.level);
+  return (
+    hasAttackTarget &&
+    enemyHasEscapeRoute(runtime, enemy, col, row, range, fuse)
+  );
+}
+
+function chooseEnemyDirection(
+  runtime: Runtime,
+  enemy: Enemy,
+  timestamp: number,
+) {
+  const ignoredBombTiles = overlappingBombTiles(runtime, enemy, 18);
+  const options = (Object.keys(directions) as Direction[]).filter(
+    (direction) => {
+      const vector = directions[direction];
+      return canOccupy(
+        runtime,
+        enemy.x + vector.x * 8,
+        enemy.y + vector.y * 8,
+        18,
+        ignoredBombTiles,
+      );
+    },
+  );
+  if (!options.length) return undefined;
+
+  const col = Math.floor(enemy.x / TILE);
+  const row = Math.floor(enemy.y / TILE);
+  const playerCol = Math.floor(runtime.player.x / TILE);
+  const playerRow = Math.floor(runtime.player.y / TILE);
+  const currentThreat = tileThreat(runtime, col, row);
+  const elapsedPressure = Math.min(0.18, (ROUND_SECONDS - runtime.timeLeft) / 500);
+  const aggression = Math.min(
+    0.96,
+    0.67 + runtime.level * 0.055 + elapsedPressure,
+  );
+  const decisionRoll =
+    ((Math.floor(timestamp / 220) + enemy.id * 23 + runtime.level * 11) %
+      100) /
+    100;
+
+  if (currentThreat === 0 && decisionRoll > aggression) {
+    const safest = options.filter((direction) => {
+      const vector = directions[direction];
+      return tileThreat(runtime, col + vector.x, row + vector.y) === 0;
+    });
+    const pool = safest.length ? safest : options;
+    return pool[
+      (Math.floor(timestamp * 0.009) + enemy.id * 7) % pool.length
+    ];
+  }
+
+  return options
+    .map((direction, index) => {
+      const vector = directions[direction];
+      const nextCol = col + vector.x;
+      const nextRow = row + vector.y;
+      const danger = tileThreat(runtime, nextCol, nextRow);
+      const playerDistance =
+        Math.abs(playerCol - nextCol) + Math.abs(playerRow - nextRow);
+      const turnNoise =
+        ((enemy.id * 17 + index * 13 + Math.floor(timestamp / 180)) % 11) /
+        100;
+      return {
+        direction,
+        score: danger * 100 + playerDistance + turnNoise,
+      };
+    })
+    .sort((a, b) => a.score - b.score)[0].direction;
+}
+
+function placeEnemyBomb(runtime: Runtime, enemy: Enemy) {
+  if (enemy.bombCooldown > 0 || !shouldEnemyPlaceBomb(runtime, enemy)) {
+    return;
+  }
+
+  const col = Math.floor(enemy.x / TILE);
+  const row = Math.floor(enemy.y / TILE);
+  const maxBombs = runtime.level >= 4 ? 2 : 1;
+  const activeBombs = runtime.bombs.filter(
+    (bomb) => bomb.owner === enemy.id,
+  ).length;
+  if (
+    activeBombs >= maxBombs ||
+    runtime.bombs.some((bomb) => bomb.col === col && bomb.row === row)
+  ) {
+    return;
+  }
+
+  runtime.bombs.push({
+    id: runtime.nextBombId,
+    col,
+    row,
+    fuse: enemyBombFuse(runtime.level),
+    range: enemyBombRange(runtime.level),
+    remote: false,
+    owner: enemy.id,
+  });
+  runtime.nextBombId += 1;
+  enemy.bombCooldown = Math.max(
+    1.55,
+    4.1 - runtime.level * 0.28 - (runtime.timeLeft < 45 ? 0.45 : 0),
+  );
+  enemy.turnAt = 0;
 }
 
 function moveActor(
@@ -742,7 +1012,8 @@ export default function Home() {
     const runtime = runtimeRef.current;
     if (
       runtime.status !== "playing" ||
-      runtime.bombs.length >= runtime.maxBombs
+      runtime.bombs.filter((bomb) => bomb.owner === "player").length >=
+        runtime.maxBombs
     ) {
       return;
     }
@@ -761,6 +1032,7 @@ export default function Home() {
       fuse: remote ? 12 : 2.15,
       range: runtime.bombRange,
       remote,
+      owner: "player",
     });
     if (remote) runtime.remoteCharges -= 1;
     runtime.nextBombId += 1;
@@ -787,7 +1059,7 @@ export default function Home() {
           cells.push([col, row]);
           if (tile === 2) {
             runtime.board[row][col] = 0;
-            runtime.score += 30;
+            if (bomb.owner === "player") runtime.score += 30;
             const dropRoll = (col * 31 + row * 17 + bomb.id * 13) % 100;
             if (dropRoll < 43) {
               const poolIndex =
@@ -824,6 +1096,7 @@ export default function Home() {
         const col = Math.floor(enemy.x / TILE);
         const row = Math.floor(enemy.y / TILE);
         if (!keys.has(flameKey(col, row))) return true;
+        if (bomb.owner !== "player") return true;
         runtime.score += 250;
         playTone(760, 0.09, "square");
         return false;
@@ -948,8 +1221,9 @@ export default function Home() {
         });
         runtime.flames = runtime.flames.filter((flame) => flame.life > 0);
 
-        runtime.enemies.forEach((enemy, enemyIndex) => {
+        runtime.enemies.forEach((enemy) => {
           enemy.turnAt -= delta;
+          enemy.bombCooldown = Math.max(0, enemy.bombCooldown - delta);
           const current = directions[enemy.direction];
           const oldX = enemy.x;
           const oldY = enemy.y;
@@ -967,27 +1241,16 @@ export default function Home() {
             Math.abs((enemy.x % TILE) - TILE / 2) < 2 &&
             Math.abs((enemy.y % TILE) - TILE / 2) < 2;
           if (blocked || (enemy.turnAt <= 0 && nearCenter)) {
-            const options = (
-              Object.keys(directions) as Direction[]
-            ).filter((direction) => {
-              const vector = directions[direction];
-              return canOccupy(
-                runtime,
-                enemy.x + vector.x * 8,
-                enemy.y + vector.y * 8,
-                18,
-              );
-            });
-            if (options.length) {
-              const choice =
-                Math.floor(
-                  timestamp * 0.013 + enemyIndex * 7 + runtime.level * 3,
-                ) % options.length;
-              enemy.direction = options[choice];
-            }
+            const nextDirection = chooseEnemyDirection(
+              runtime,
+              enemy,
+              timestamp,
+            );
+            if (nextDirection) enemy.direction = nextDirection;
             enemy.turnAt =
-              0.4 + ((enemyIndex * 0.37 + timestamp * 0.001) % 0.8);
+              0.25 + ((enemy.id * 0.29 + timestamp * 0.001) % 0.55);
           }
+          if (nearCenter) placeEnemyBomb(runtime, enemy);
 
           if (
             Math.hypot(
