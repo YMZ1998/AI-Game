@@ -1472,7 +1472,8 @@ button:focus-visible {
 }
 
 .lan-form-card,
-.score-sheet {
+.score-sheet,
+.leaderboard-sheet {
   color: #211813;
   background: #f5ead1;
   border: 1px solid rgba(255, 255, 255, 0.45);
@@ -1482,6 +1483,12 @@ button:focus-visible {
 
 .lan-form-card {
   padding: 28px;
+}
+
+.lan-lobby-side,
+.waiting-ledgers {
+  display: grid;
+  gap: 16px;
 }
 
 .lan-form-card label {
@@ -1806,6 +1813,159 @@ button:focus-visible {
   padding: 18px;
 }
 
+.leaderboard-sheet {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 18px 14px;
+}
+
+.leaderboard-sheet::after {
+  position: absolute;
+  right: -24px;
+  bottom: -30px;
+  width: 88px;
+  height: 88px;
+  border: 2px solid rgba(158, 57, 45, 0.12);
+  border-radius: 50%;
+  content: "榜";
+  color: rgba(158, 57, 45, 0.13);
+  font: 900 36px/84px Georgia, "Noto Serif SC", serif;
+  text-align: center;
+  transform: rotate(-12deg);
+}
+
+.leaderboard-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.leaderboard-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.leaderboard-head span {
+  color: #8f7b68;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.leaderboard-head strong {
+  font: 900 15px/1.2 Georgia, "Noto Serif SC", serif;
+}
+
+.leaderboard-head button {
+  min-width: 48px;
+  min-height: 30px;
+  border: 1px solid #cbbfa6;
+  border-radius: 999px;
+  color: #397ea8;
+  background: #fffaf0;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.leaderboard-head button:hover,
+.leaderboard-head button:focus-visible {
+  border-color: #4d9dce;
+  outline: 3px solid rgba(120, 212, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.leaderboard-head button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.leaderboard-table-wrap {
+  position: relative;
+  z-index: 1;
+  overflow-x: auto;
+}
+
+.leaderboard-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.leaderboard-sheet th,
+.leaderboard-sheet td {
+  padding: 7px 5px;
+  border-bottom: 1px solid #ded2ba;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.leaderboard-sheet th {
+  color: #887562;
+  font-size: 8px;
+}
+
+.leaderboard-sheet td:last-child {
+  font-weight: 900;
+  text-align: right;
+}
+
+.rank-seal {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #cbbfa6;
+  border-radius: 50%;
+  color: #786757;
+  background: #fffaf0;
+  font: 900 10px/1 Georgia, serif;
+}
+
+.rank-seal.rank-1 {
+  border-color: #b68c34;
+  color: #5e4312;
+  background: #e5c66f;
+}
+
+.rank-seal.rank-2 {
+  border-color: #9b9d99;
+  color: #515450;
+  background: #d9ddd8;
+}
+
+.rank-seal.rank-3 {
+  border-color: #a96f49;
+  color: #61351f;
+  background: #dba77f;
+}
+
+.leaderboard-empty {
+  position: relative;
+  z-index: 1;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  border: 1px dashed #d1c4aa;
+  color: #8f7b68;
+  font-size: 10px;
+  text-align: center;
+}
+
+.leaderboard-sheet > small {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: 9px;
+  color: #9b8874;
+  font-size: 8px;
+}
+
 .score-sheet-head {
   display: flex;
   justify-content: space-between;
@@ -2069,6 +2229,15 @@ button:focus-visible {
 
   .lan-form-card {
     padding: 22px;
+  }
+
+  .lan-lobby-side,
+  .waiting-ledgers {
+    gap: 12px;
+  }
+
+  .leaderboard-sheet {
+    padding: 14px;
   }
 
   .room-waiting {

@@ -100,8 +100,12 @@ test("provides a local-only Doudizhu room server and CSV score ledger", async ()
   assert.match(serverSource, /doudizhu-ws/);
   assert.match(serverSource, /\/api\/doudizhu\/room/);
   assert.match(serverSource, /\/api\/doudizhu\/network/);
+  assert.match(serverSource, /\/api\/doudizhu\/leaderboard/);
   assert.match(serverSource, /PollingSocket/);
   assert.match(serverSource, /doudizhu-scores\.csv/);
+  assert.match(serverSource, /doudizhu-leaderboard\.json/);
+  assert.match(serverSource, /leaderboardSnapshot/);
+  assert.match(serverSource, /playedCards/);
   assert.match(serverSource, /时间,房间,玩家,座位,身份,结果,倍数,本局积分,累计积分/);
   assert.match(serverSource, /message\.type === "create"/);
   assert.match(serverSource, /message\.type === "join"/);

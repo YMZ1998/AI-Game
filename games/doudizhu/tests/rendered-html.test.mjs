@@ -73,12 +73,16 @@ test("ships LAN rooms, score sheets, and a same-origin realtime client", async (
   assert.match(lanSource, /\/doudizhu-ws/);
   assert.match(lanSource, /\/api\/doudizhu\/room/);
   assert.match(lanSource, /\/api\/doudizhu\/network/);
+  assert.match(lanSource, /\/api\/doudizhu\/leaderboard/);
   assert.match(lanSource, /setInterval/);
   assert.match(lanSource, /创建新房间/);
   assert.match(lanSource, /加入房间/);
   assert.match(lanSource, /添加人机/);
   assert.match(lanSource, /remove_bot/);
   assert.match(lanSource, /player\.isBot/);
+  assert.match(lanSource, /playedCards/);
+  assert.match(lanSource, /leaderboard-sheet/);
+  assert.match(lanSource, /card-counter/);
   assert.match(lanSource, /房间积分表/);
   assert.match(lanSource, /\/api\/doudizhu\/scores\.csv/);
   assert.match(lanSource, /location\.host/);

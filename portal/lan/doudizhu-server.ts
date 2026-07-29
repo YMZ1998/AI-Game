@@ -48,6 +48,7 @@ type MatchState = {
   phase: "bidding" | "playing" | "finished";
   hands: Card[][];
   bottom: Card[];
+  playedCards: Card[];
   landlord: number | null;
   currentTurn: number;
   lastPlay: { player: number; cards: Card[]; combo: Combo } | null;
@@ -75,6 +76,14 @@ type Room = {
   players: Map<number, RoomPlayer>;
   match: MatchState | null;
   botTimer?: ReturnType<typeof setTimeout>;
+};
+type LeaderboardEntry = {
+  name: string;
+  score: number;
+  wins: number;
+  losses: number;
+  rounds: number;
+  updatedAt: string;
 };
 
 const PLAYER_LABELS = ["玩家一", "玩家二", "玩家三"];
@@ -337,6 +346,7 @@ function dealMatch(): MatchState {
       sortCards(deck.slice(34, 51)),
     ],
     bottom: deck.slice(51),
+    playedCards: [],
     landlord: null,
     currentTurn: starter,
     lastPlay: null,
@@ -501,7 +511,10 @@ export function doudizhuLanServer(): Plugin {
   const wss = new WebSocketServer({ noServer: true });
   const dataDir = path.resolve(import.meta.dirname, "../data");
   const scoreFile = path.join(dataDir, "doudizhu-scores.csv");
+  const leaderboardFile = path.join(dataDir, "doudizhu-leaderboard.json");
+  const leaderboard = new Map<string, LeaderboardEntry>();
   let scheduleBots: (room: Room) => void = () => {};
+  let leaderboardWriteQueue = Promise.resolve();
   const csvHeader =
     "\uFEFF时间,房间,玩家,座位,身份,结果,倍数,本局积分,累计积分\r\n";
 
@@ -512,6 +525,57 @@ export function doudizhuLanServer(): Plugin {
     } catch {
       await writeFile(scoreFile, csvHeader, "utf8");
     }
+  };
+
+  const leaderboardKey = (name: string) => name.trim().toLocaleLowerCase("zh-CN");
+
+  const loadLeaderboard = async () => {
+    await mkdir(dataDir, { recursive: true });
+    try {
+      const raw = await readFile(leaderboardFile, "utf8");
+      const parsed = JSON.parse(raw) as { entries?: LeaderboardEntry[] };
+      for (const entry of parsed.entries ?? []) {
+        if (!entry?.name || !Number.isFinite(entry.score)) continue;
+        leaderboard.set(leaderboardKey(entry.name), {
+          name: String(entry.name).slice(0, 12),
+          score: Number(entry.score) || 0,
+          wins: Number(entry.wins) || 0,
+          losses: Number(entry.losses) || 0,
+          rounds: Number(entry.rounds) || 0,
+          updatedAt: String(entry.updatedAt || ""),
+        });
+      }
+    } catch {
+      await writeFile(
+        leaderboardFile,
+        JSON.stringify({ version: 1, entries: [] }, null, 2),
+        "utf8",
+      );
+    }
+  };
+
+  const leaderboardReady = loadLeaderboard();
+
+  const leaderboardSnapshot = () =>
+    [...leaderboard.values()]
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          b.wins - a.wins ||
+          a.rounds - b.rounds ||
+          a.name.localeCompare(b.name, "zh-CN"),
+      );
+
+  const persistLeaderboard = () => {
+    const payload = JSON.stringify(
+      { version: 1, entries: leaderboardSnapshot() },
+      null,
+      2,
+    );
+    leaderboardWriteQueue = leaderboardWriteQueue.then(() =>
+      writeFile(leaderboardFile, payload, "utf8"),
+    );
+    return leaderboardWriteQueue;
   };
 
   const broadcast = (room: Room) => {
@@ -537,6 +601,7 @@ export function doudizhuLanServer(): Plugin {
               phase: match.phase,
               hand: match.hands[player.seat],
               bottom: match.landlord === null ? [] : match.bottom,
+              playedCards: match.playedCards,
               landlord: match.landlord,
               currentTurn: match.currentTurn,
               lastPlay: match.lastPlay,
@@ -561,10 +626,15 @@ export function doudizhuLanServer(): Plugin {
   const recordRound = async (room: Room) => {
     const match = room.match;
     if (!match || match.winner === null || match.landlord === null) return;
-    await ensureScoreFile();
     const timestamp = new Date().toISOString();
     const landlordWon = match.winner === match.landlord;
-    const rows = [...room.players.values()].map((player) => {
+    const players = [...room.players.values()].map((player) => ({
+      seat: player.seat,
+      name: player.name,
+      score: player.score,
+      isBot: player.isBot,
+    }));
+    const rows = players.map((player) => {
       const won =
         player.seat === match.landlord
           ? landlordWon
@@ -583,7 +653,33 @@ export function doudizhuLanServer(): Plugin {
         .map(csvCell)
         .join(",");
     });
+    await ensureScoreFile();
     await appendFile(scoreFile, `${rows.join("\r\n")}\r\n`, "utf8");
+    await leaderboardReady;
+    for (const player of players) {
+      if (player.isBot) continue;
+      const key = leaderboardKey(player.name);
+      const current = leaderboard.get(key) ?? {
+        name: player.name,
+        score: 0,
+        wins: 0,
+        losses: 0,
+        rounds: 0,
+        updatedAt: "",
+      };
+      const won =
+        player.seat === match.landlord ? landlordWon : !landlordWon;
+      leaderboard.set(key, {
+        ...current,
+        name: player.name,
+        score: current.score + match.roundDelta[player.seat],
+        wins: current.wins + (won ? 1 : 0),
+        losses: current.losses + (won ? 0 : 1),
+        rounds: current.rounds + 1,
+        updatedAt: timestamp,
+      });
+    }
+    await persistLeaderboard();
   };
 
   const startMatch = (room: Room, socket: SocketLike) => {
@@ -629,6 +725,7 @@ export function doudizhuLanServer(): Plugin {
     match.hands[seat] = match.hands[seat].filter(
       (card) => !idSet.has(card.id),
     );
+    match.playedCards.push(...cards);
     match.plays[seat] += 1;
     match.lastPlay = { player: seat, cards: sortCards(cards), combo };
     match.passes = 0;
@@ -955,6 +1052,20 @@ export function doudizhuLanServer(): Plugin {
           response.setHeader("content-type", "application/json; charset=utf-8");
           response.setHeader("cache-control", "no-store");
           response.end(JSON.stringify({ origins: localNetworkOrigins(port) }));
+          return;
+        }
+        if (requestUrl.pathname === "/api/doudizhu/leaderboard") {
+          await leaderboardReady;
+          const entries = leaderboardSnapshot().slice(0, 20);
+          response.statusCode = 200;
+          response.setHeader("content-type", "application/json; charset=utf-8");
+          response.setHeader("cache-control", "no-store");
+          response.end(
+            JSON.stringify({
+              entries,
+              updatedAt: entries[0]?.updatedAt ?? new Date(0).toISOString(),
+            }),
+          );
           return;
         }
         if (requestUrl.pathname === "/api/doudizhu/room") {

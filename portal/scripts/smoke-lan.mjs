@@ -1,74 +1,92 @@
-import WebSocket from "ws";
 import assert from "node:assert/strict";
 
 const address = process.argv[2] ?? "ws://127.0.0.1:3003/doudizhu-ws";
-const inboxes = new WeakMap();
-
-function connect() {
-  return new Promise((resolve, reject) => {
-    const socket = new WebSocket(address);
-    const inbox = { messages: [], waiters: [] };
-    inboxes.set(socket, inbox);
-    socket.on("message", (data) => {
-      const message = JSON.parse(data.toString());
-      const waiter = inbox.waiters.shift();
-      if (waiter) waiter(message);
-      else inbox.messages.push(message);
-    });
-    socket.once("open", () => resolve(socket));
-    socket.once("error", reject);
-  });
+const httpOrigin = address
+  .replace(/^ws:/, "http:")
+  .replace(/^wss:/, "https:")
+  .replace(/\/doudizhu-ws$/, "");
+async function pollingRequest(clientId, payload) {
+  const response = await fetch(
+    `${httpOrigin}/api/doudizhu/room?clientId=${encodeURIComponent(clientId)}`,
+    payload
+      ? {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      : undefined,
+  );
+  assert.equal(response.status, 200);
+  return response.json();
 }
 
-function next(socket) {
-  const inbox = inboxes.get(socket);
-  const existing = inbox.messages.shift();
-  if (existing) return Promise.resolve(existing);
-  return new Promise((resolve) => {
-    inbox.waiters.push(resolve);
-  });
-}
+const pollingStates = (clientIds) =>
+  Promise.all(clientIds.map((clientId) => pollingRequest(clientId)));
 
-function send(socket, payload) {
-  socket.send(JSON.stringify(payload));
-}
-
-const sockets = await Promise.all([connect(), connect(), connect()]);
-await Promise.all(sockets.map(next));
-
-send(sockets[0], { type: "create", name: "甲" });
-const created = await next(sockets[0]);
-const code = created.roomCode;
-
-send(sockets[1], { type: "join", name: "乙", code });
-await Promise.all([next(sockets[0]), next(sockets[1])]);
-
-send(sockets[2], { type: "join", name: "丙", code });
-await Promise.all(sockets.map(next));
-
-send(sockets[0], { type: "start" });
-const states = await Promise.all(sockets.map(next));
+const pollingClientIds = [0, 1, 2].map(
+  (seat) => `score-${Date.now()}-${seat}-${Math.random().toString(36).slice(2)}`,
+);
+await pollingStates(pollingClientIds);
+const scoreRoom = await pollingRequest(pollingClientIds[0], {
+  type: "create",
+  name: "榜甲",
+});
+await pollingRequest(pollingClientIds[1], {
+  type: "join",
+  name: "榜乙",
+  code: scoreRoom.roomCode,
+});
+await pollingRequest(pollingClientIds[2], {
+  type: "join",
+  name: "榜丙",
+  code: scoreRoom.roomCode,
+});
+await pollingRequest(pollingClientIds[0], { type: "start" });
+let states = await pollingStates(pollingClientIds);
 
 console.log(
   JSON.stringify({
-    code,
+    code: scoreRoom.roomCode,
     playerCounts: states.map((state) => state.players.length),
     phases: states.map((state) => state.match?.phase),
     handCounts: states.map((state) => state.match?.hand.length),
   }),
 );
 
-for (const socket of sockets) socket.close();
+for (let turn = 0; turn < 200 && states[0].match?.phase !== "finished"; turn += 1) {
+  const currentSeat = states[0].match?.currentTurn;
+  assert.ok(Number.isInteger(currentSeat));
+  const currentState = states[currentSeat];
+  if (currentState.match.phase === "bidding") {
+    await pollingRequest(pollingClientIds[currentSeat], {
+      type: "bid",
+      score: 3,
+    });
+  } else if (currentState.match.hintIds.length) {
+    await pollingRequest(pollingClientIds[currentSeat], {
+      type: "play",
+      cardIds: currentState.match.hintIds,
+    });
+  } else {
+    await pollingRequest(pollingClientIds[currentSeat], { type: "pass" });
+  }
+  states = await pollingStates(pollingClientIds);
+}
 
-const botHost = await connect();
-await next(botHost);
-send(botHost, { type: "create", name: "房主" });
-const botRoom = await next(botHost);
+assert.equal(states[0].match?.phase, "finished");
+assert.ok(states[0].match.playedCards.length > 0);
 
-send(botHost, { type: "add_bot", seat: 1 });
-await next(botHost);
-send(botHost, { type: "add_bot", seat: 2 });
-const filledWithBots = await next(botHost);
+const botClientId = `bot-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+await pollingRequest(botClientId);
+const botRoom = await pollingRequest(botClientId, {
+  type: "create",
+  name: "房主",
+});
+await pollingRequest(botClientId, { type: "add_bot", seat: 1 });
+const filledWithBots = await pollingRequest(botClientId, {
+  type: "add_bot",
+  seat: 2,
+});
 
 assert.equal(filledWithBots.players.length, 3);
 assert.equal(
@@ -76,16 +94,28 @@ assert.equal(
   2,
 );
 
-send(botHost, { type: "start" });
-const botMatch = await next(botHost);
+const botMatch = await pollingRequest(botClientId, { type: "start" });
 assert.equal(botMatch.match?.phase, "bidding");
+assert.deepEqual(botMatch.match?.playedCards, []);
+
+let leaderboardResponse;
+let leaderboard;
+for (let attempt = 0; attempt < 20; attempt += 1) {
+  leaderboardResponse = await fetch(`${httpOrigin}/api/doudizhu/leaderboard`);
+  assert.equal(leaderboardResponse.status, 200);
+  leaderboard = await leaderboardResponse.json();
+  if (leaderboard.entries.length >= 3) break;
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+assert.equal(leaderboardResponse.status, 200);
+assert.ok(Array.isArray(leaderboard.entries));
+assert.ok(leaderboard.entries.length >= 3);
 
 console.log(
   JSON.stringify({
     code: botRoom.roomCode,
     bots: botMatch.players.filter((player) => player.isBot).map((player) => player.name),
     phase: botMatch.match?.phase,
+    leaderboardEntries: leaderboard.entries.length,
   }),
 );
-
-botHost.close();

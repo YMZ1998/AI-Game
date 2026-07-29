@@ -26,6 +26,7 @@ type Match = {
   phase: "bidding" | "playing" | "finished";
   hand: Card[];
   bottom: Card[];
+  playedCards: Card[];
   landlord: number | null;
   currentTurn: number;
   lastPlay: LastPlay | null;
@@ -48,6 +49,34 @@ type ServerMessage =
   | ({ type: "room" } & RoomState)
   | { type: "error"; message: string }
   | { type: "connected" };
+
+type LeaderboardEntry = {
+  name: string;
+  score: number;
+  wins: number;
+  losses: number;
+  rounds: number;
+  updatedAt: string;
+};
+
+const COUNTER_RANKS = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3];
+const COUNTER_LABELS: Record<number, string> = {
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "8",
+  9: "9",
+  10: "10",
+  11: "J",
+  12: "Q",
+  13: "K",
+  14: "A",
+  15: "2",
+  16: "小",
+  17: "大",
+};
 
 const seatLabel = (seat: number) => `座位 ${seat + 1}`;
 
@@ -161,6 +190,73 @@ function ScoreTable({
   );
 }
 
+function Leaderboard({
+  entries,
+  loading,
+  onRefresh,
+}: {
+  entries: LeaderboardEntry[];
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <section className="leaderboard-sheet" aria-label="局域网积分榜">
+      <div className="leaderboard-head">
+        <div>
+          <span>LOCAL RANKING</span>
+          <strong>局域网积分榜</strong>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          aria-label="刷新积分榜"
+        >
+          {loading ? "同步中" : "刷新"}
+        </button>
+      </div>
+      {entries.length ? (
+        <div className="leaderboard-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>玩家</th>
+                <th>战绩</th>
+                <th>积分</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.slice(0, 5).map((entry, index) => (
+                <tr key={`${entry.name}-${index}`}>
+                  <td>
+                    <span className={`rank-seal rank-${index + 1}`}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td>{entry.name}</td>
+                  <td>
+                    {entry.wins} 胜 / {entry.rounds} 局
+                  </td>
+                  <td className={entry.score >= 0 ? "score-up" : "score-down"}>
+                    {entry.score > 0 ? "+" : ""}
+                    {entry.score}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="leaderboard-empty">
+          {loading ? "正在读取主机积分…" : "完成第一局后，这里会出现牌手排名。"}
+        </p>
+      )}
+      <small>只统计真人玩家 · 数据保存在大厅主机</small>
+    </section>
+  );
+}
+
 export default function LanGame({ onExit }: { onExit: () => void }) {
   const socketRef = useRef<WebSocket | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -171,6 +267,8 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [networkOrigin, setNetworkOrigin] = useState("");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [notice, setNotice] = useState("正在连接同一局域网内的牌桌…");
 
@@ -188,8 +286,30 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
     }
   }, []);
 
+  const loadLeaderboard = useCallback(() => {
+    setLeaderboardLoading(true);
+    void fetch("/api/doudizhu/leaderboard", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("leaderboard unavailable");
+        return response.json();
+      })
+      .then((data: { entries?: LeaderboardEntry[] }) => {
+        setLeaderboard(data.entries ?? []);
+      })
+      .catch(() => {
+        setLeaderboard([]);
+      })
+      .finally(() => setLeaderboardLoading(false));
+  }, []);
+
   useEffect(() => {
-    setName(localStorage.getItem("doudizhu-lan-name") ?? "");
+    queueMicrotask(() => {
+      setName(localStorage.getItem("doudizhu-lan-name") ?? "");
+      setRoomCode(
+        new URLSearchParams(location.search).get("room")?.toUpperCase() ?? "",
+      );
+      loadLeaderboard();
+    });
     void fetch("/api/doudizhu/network", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: { origins?: string[] }) => {
@@ -252,7 +372,7 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
       if (socketRef.current === socket) socketRef.current = null;
       socket.close();
     };
-  }, [receiveMessage]);
+  }, [loadLeaderboard, receiveMessage]);
 
   const send = useCallback((payload: Record<string, unknown>) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -304,11 +424,6 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
     setNotice("邀请地址已复制；朋友连接同一 Wi-Fi 后打开即可");
   };
 
-  useEffect(() => {
-    const code = new URLSearchParams(location.search).get("room");
-    if (code) setRoomCode(code.toUpperCase());
-  }, []);
-
   const match = room?.match;
   const isMyTurn = Boolean(match && match.currentTurn === room?.seat);
   const opponents = useMemo(
@@ -317,6 +432,27 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
   );
   const selectedCards =
     match?.hand.filter((card) => selectedIds.includes(card.id)) ?? [];
+  const remainingRankCounts = useMemo(() => {
+    const counts = new Map<number, number>(
+      COUNTER_RANKS.map((rank) => [rank, rank >= 16 ? 1 : 4]),
+    );
+    if (match) {
+      [...match.hand, ...match.playedCards].forEach((card) => {
+        counts.set(card.rank, Math.max(0, (counts.get(card.rank) ?? 0) - 1));
+      });
+    }
+    return COUNTER_RANKS.map((rank) => ({
+      rank,
+      label: COUNTER_LABELS[rank],
+      count: counts.get(rank) ?? 0,
+    }));
+  }, [match]);
+
+  useEffect(() => {
+    if (match?.phase !== "finished") return;
+    const timer = window.setTimeout(loadLeaderboard, 500);
+    return () => window.clearTimeout(timer);
+  }, [loadLeaderboard, match?.phase, match?.winner]);
 
   const toggleCard = (id: string) => {
     setSelectedIds((current) =>
@@ -363,46 +499,55 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
             </p>
             <div className="lan-notice">{notice}</div>
           </div>
-          <div className="lan-form-card">
-            <label>
-              你的称呼
-              <input
-                value={name}
-                maxLength={10}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="例如：小明"
-              />
-            </label>
-            <button
-              type="button"
-              className="lan-primary"
-              onClick={createRoom}
-              disabled={!connected}
-            >
-              创建新房间
-            </button>
-            <div className="lan-divider">
-              <span>或使用房间码</span>
-            </div>
-            <div className="join-row">
-              <input
-                value={roomCode}
-                maxLength={4}
-                onChange={(event) =>
-                  setRoomCode(event.target.value.toUpperCase())
-                }
-                placeholder="ABCD"
-                aria-label="四位房间码"
-              />
+          <div className="lan-lobby-side">
+            <div className="lan-form-card">
+              <label>
+                你的称呼
+                <input
+                  value={name}
+                  maxLength={10}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="例如：小明"
+                />
+              </label>
               <button
                 type="button"
-                onClick={joinRoom}
-                disabled={!connected || roomCode.length < 4}
+                className="lan-primary"
+                onClick={createRoom}
+                disabled={!connected}
               >
-                加入房间
+                创建新房间
               </button>
+              <div className="lan-divider">
+                <span>或使用房间码</span>
+              </div>
+              <div className="join-row">
+                <input
+                  value={roomCode}
+                  maxLength={4}
+                  onChange={(event) =>
+                    setRoomCode(event.target.value.toUpperCase())
+                  }
+                  placeholder="ABCD"
+                  aria-label="四位房间码"
+                />
+                <button
+                  type="button"
+                  onClick={joinRoom}
+                  disabled={!connected || roomCode.length < 4}
+                >
+                  加入房间
+                </button>
+              </div>
+              <p className="privacy-note">
+                积分仅保存在这台大厅主机，不上传网络。
+              </p>
             </div>
-            <p className="privacy-note">积分仅保存在这台大厅主机，不上传网络。</p>
+            <Leaderboard
+              entries={leaderboard}
+              loading={leaderboardLoading}
+              onRefresh={loadLeaderboard}
+            />
           </div>
         </section>
       </main>
@@ -495,7 +640,14 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
               <span>房主将在三人到齐后开始</span>
             )}
           </div>
-          <ScoreTable room={room} />
+          <div className="waiting-ledgers">
+            <ScoreTable room={room} />
+            <Leaderboard
+              entries={leaderboard}
+              loading={leaderboardLoading}
+              onRefresh={loadLeaderboard}
+            />
+          </div>
         </section>
       </main>
     );
@@ -574,6 +726,26 @@ export default function LanGame({ onExit }: { onExit: () => void }) {
           </div>
           <span className="multiplier">倍数 ×{match.multiplier}</span>
         </div>
+
+        <aside className="card-counter" aria-label="记牌器">
+          <div className="counter-heading">
+            <strong>记牌器</strong>
+            <span>REMEMBER</span>
+          </div>
+          <div className="counter-ranks">
+            {remainingRankCounts.map((item) => (
+              <div
+                className={`${item.count === 0 ? "empty" : ""} ${
+                  item.rank >= 16 ? "joker" : ""
+                }`}
+                key={item.rank}
+              >
+                <span>{item.label}</span>
+                <b>{item.count}</b>
+              </div>
+            ))}
+          </div>
+        </aside>
 
         <div className="play-zone">
           <div className="turn-message">
