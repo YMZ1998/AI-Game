@@ -1,41 +1,65 @@
 @echo off
-setlocal
-chcp 65001 >nul
-title PLAYROOM 游戏大厅
+setlocal EnableExtensions
+title PLAYROOM Game Hall
 
 cd /d "%~dp0"
+set "PLAYROOM_URL=http://localhost:3003/"
+set "PLAYROOM_PORT=3003"
 
 where node >nul 2>nul
 if errorlevel 1 (
-  echo [错误] 未找到 Node.js，请先安装 Node.js 22 或更高版本。
+  echo [ERROR] Node.js was not found. Install Node.js 22 or newer.
   pause
   exit /b 1
 )
 
 where npm >nul 2>nul
 if errorlevel 1 (
-  echo [错误] 未找到 npm，请检查 Node.js 安装是否完整。
+  echo [ERROR] npm was not found. Repair the Node.js installation.
   pause
   exit /b 1
 )
 
-powershell.exe -NoProfile -Command "if (Get-NetTCPConnection -LocalPort 3003 -State Listen -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"
+if not exist "portal\package.json" (
+  echo [ERROR] portal\package.json was not found.
+  echo [ERROR] Run this file from the AI-Game workspace root.
+  pause
+  exit /b 1
+)
+
+powershell.exe -NoProfile -Command "if (Get-NetTCPConnection -LocalPort %PLAYROOM_PORT% -State Listen -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"
 if not errorlevel 1 (
-  echo [PLAYROOM] 游戏大厅已经在运行，正在打开浏览器……
-  start "" "http://localhost:3003/"
+  echo [PLAYROOM] Port %PLAYROOM_PORT% is already listening. Opening the game hall...
+  start "" "%PLAYROOM_URL%"
   exit /b 0
 )
 
-echo [PLAYROOM] 正在启动游戏大厅……
-echo [PLAYROOM] 本机地址：http://localhost:3003/
-echo [PLAYROOM] 请保持此窗口开启；关闭窗口会停止大厅服务。
+if not exist "portal\node_modules\.bin\vinext.cmd" (
+  echo [PLAYROOM] Installing portal dependencies...
+  call npm --prefix portal install
+  if errorlevel 1 (
+    echo [ERROR] Dependency installation failed.
+    pause
+    exit /b 1
+  )
+)
+
+echo [PLAYROOM] Starting the game hall...
+echo [PLAYROOM] Local URL: %PLAYROOM_URL%
+echo [PLAYROOM] Keep this window open. Closing it stops the server.
 echo.
 
-start "" powershell.exe -NoProfile -WindowStyle Hidden -Command "$deadline=(Get-Date).AddSeconds(30); do { try { $response=Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:3003/' -TimeoutSec 1; if ($response.StatusCode -eq 200) { Start-Process 'http://localhost:3003/'; exit 0 } } catch {}; Start-Sleep -Milliseconds 500 } while ((Get-Date) -lt $deadline)"
+start "" powershell.exe -NoProfile -WindowStyle Hidden -Command "$deadline=(Get-Date).AddSeconds(45); do { try { $response=Invoke-WebRequest -UseBasicParsing '%PLAYROOM_URL%' -TimeoutSec 1; if ($response.StatusCode -eq 200) { Start-Process '%PLAYROOM_URL%'; exit 0 } } catch {}; Start-Sleep -Milliseconds 500 } while ((Get-Date) -lt $deadline)"
 
 set "PLAYROOM_SKIP_GAME_BUILD=1"
-call npm run dev
+call npm --prefix portal run dev
+set "PLAYROOM_EXIT_CODE=%ERRORLEVEL%"
 
 echo.
-echo [PLAYROOM] 游戏大厅已停止。
+if "%PLAYROOM_EXIT_CODE%"=="0" (
+  echo [PLAYROOM] The game hall has stopped.
+) else (
+  echo [ERROR] The game hall stopped with exit code %PLAYROOM_EXIT_CODE%.
+)
 pause
+exit /b %PLAYROOM_EXIT_CODE%
