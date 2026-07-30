@@ -80,7 +80,7 @@ export default defineConfig(async () => {
         "/multiplayer-blackjack-service": {
           target: `http://127.0.0.1:${MULTIPLAYER_BLACKJACK_INTERNAL_PORT}`,
           changeOrigin: true,
-          ws: true,
+          ws: false,
           rewrite: (requestPath) =>
             requestPath.replace(/^\/multiplayer-blackjack-service/, "") || "/",
         },

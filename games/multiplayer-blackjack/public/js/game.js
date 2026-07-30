@@ -15,7 +15,9 @@ function startGame()
 }
 
 const socket=io({
-  path: '/multiplayer-blackjack-service/socket.io'
+  path: '/multiplayer-blackjack-service/socket.io',
+  transports: ['polling'],
+  upgrade: false
 });
 
 //Join ChatRoom

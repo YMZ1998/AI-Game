@@ -369,7 +369,17 @@ test("provides Multiplayer Blackjack behind the shared portal port", async () =>
   assert.match(serverSource, /MULTIPLAYER_BLACKJACK_INTERNAL_PORT/);
   assert.match(viteSource, /multiplayerBlackjackServer/);
   assert.match(viteSource, /"\/multiplayer-blackjack-service"/);
-  assert.match(viteSource, /ws: true/);
+  assert.match(viteSource, /ws: false/);
+
+  const clientSource = await readFile(
+    new URL(
+      "../public/embedded/multiplayer-blackjack/js/game.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(clientSource, /transports:\s*\['polling'\]/);
+  assert.match(clientSource, /upgrade:\s*false/);
 });
 
 test("provides a local TOSIOS room process behind the portal proxy", async () => {
