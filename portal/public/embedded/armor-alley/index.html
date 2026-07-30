@@ -166,8 +166,20 @@
 
         let isProdHost = wlhost.match(/armor-alley\.net/i);
 
+        // PLAYROOM ships the pre-built dist/ bundle without the upstream src/ tree.
+        // Always boot the distributable build on localhost and in the portal iframe.
+        let isPlayroomBuild = true;
+
+        if (isPlayroomBuild && !forceProd) {
+          let playroomURL = new URL(wlhref);
+          playroomURL.searchParams.set('prod', '1');
+          window.history.replaceState(null, '', playroomURL);
+          forceProd = true;
+        }
+
         // cases where assets are loaded from dist/ - including floppy disk build
-        let isProd = isProdHost || forceProd || window.aaFloppy;
+        let isProd =
+          isProdHost || forceProd || window.aaFloppy || isPlayroomBuild;
 
         // For testing in production
         let noVersion = wlhref.match(/noversion/i);

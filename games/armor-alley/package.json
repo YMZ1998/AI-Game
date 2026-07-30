@@ -2,6 +2,7 @@
   "name": "playroom-armor-alley",
   "private": true,
   "scripts": {
-    "design:lint": "npx --yes @google/design.md@0.4.0 lint DESIGN.md"
+    "design:lint": "npx --yes @google/design.md@0.4.0 lint DESIGN.md",
+    "test": "node --test tests/static-dist-boot.test.mjs"
   }
 }
