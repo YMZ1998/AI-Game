@@ -1,0 +1,8 @@
+{
+  "name": "playroom-micro-racing",
+  "private": true,
+  "scripts": {
+    "design:lint": "npx --yes @google/design.md@0.4.0 lint DESIGN.md",
+    "server": "node server/server.js"
+  }
+}

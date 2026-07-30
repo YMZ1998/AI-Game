@@ -10,7 +10,7 @@
 npm run dev
 ```
 
-访问 `http://localhost:3003`。十五款游戏均从大厅同源加载；斗地主、匿名夜话和地牢枪手的局域网能力也由大厅进程统一提供。项目只用于本地和局域网运行，不会自动发布到线上。
+访问 `http://localhost:3003`。十九款游戏均从大厅同源加载；斗地主、匿名夜话、地牢枪手和微型赛车的实时服务也由大厅进程统一提供。项目只用于本地和局域网运行，不会自动发布到线上。
 
 ## 游戏列表
 
@@ -31,6 +31,10 @@ npm run dev
 | 13 | 六角拼图 | [`games/hextris`](games/hextris) | 单人 |
 | 14 | 地牢枪手 | [`games/tosios`](games/tosios) | 局域网 |
 | 15 | 装甲峡谷 | [`games/armor-alley`](games/armor-alley) | 单人战役 |
+| 16 | 尘土拉力 | [`games/trigger-rally`](games/trigger-rally) | 单人 / 离线存档 |
+| 17 | 微型赛车 | [`games/micro-racing`](games/micro-racing) | 人机 / 实时房间 |
+| 18 | 霓虹赛车 | [`games/racez`](games/racez) | 单人练习 / 在线联机 |
+| 19 | 公路追风 | [`games/javascript-racer`](games/javascript-racer) | 单人 |
 
 ## 目录约定
 

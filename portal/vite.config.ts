@@ -8,6 +8,10 @@ import {
   TOSIOS_INTERNAL_PORT,
   tosiosLanServer,
 } from "./lan/tosios-server";
+import {
+  MICRO_RACING_INTERNAL_PORT,
+  microRacingLanServer,
+} from "./lan/micro-racing-server";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -62,6 +66,13 @@ export default defineConfig(async () => {
           ws: true,
           rewrite: (requestPath) => requestPath.replace(/^\/tosios/, ""),
         },
+        "/micro-racing-service": {
+          target: `http://127.0.0.1:${MICRO_RACING_INTERNAL_PORT}`,
+          changeOrigin: true,
+          ws: true,
+          rewrite: (requestPath) =>
+            requestPath.replace(/^\/micro-racing-service/, "") || "/",
+        },
       },
       watch: isCodexSeatbeltSandbox
         ? {
@@ -75,6 +86,7 @@ export default defineConfig(async () => {
       doudizhuLanServer(),
       anonymousChatServer(),
       tosiosLanServer(),
+      microRacingLanServer(),
       vinext(),
       sites(),
       cloudflare({

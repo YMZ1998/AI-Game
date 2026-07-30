@@ -79,6 +79,30 @@ const gameCatalog = [
     title: "装甲峡谷",
     english: "ARMOR ALLEY",
   },
+  {
+    slug: "trigger-rally",
+    number: "16",
+    title: "尘土拉力",
+    english: "TRIGGER RALLY",
+  },
+  {
+    slug: "micro-racing",
+    number: "17",
+    title: "微型赛车",
+    english: "MICRO RACING",
+  },
+  {
+    slug: "racez",
+    number: "18",
+    title: "霓虹赛车",
+    english: "RACEZ.IO",
+  },
+  {
+    slug: "javascript-racer",
+    number: "19",
+    title: "公路追风",
+    english: "JAVASCRIPT RACER",
+  },
 ];
 
 async function exists(target) {

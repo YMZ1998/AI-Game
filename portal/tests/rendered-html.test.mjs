@@ -23,7 +23,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders all fifteen game cards", async () => {
+test("server-renders all nineteen game cards", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -45,10 +45,18 @@ test("server-renders all fifteen game cards", async () => {
   assert.match(html, /六角拼图/);
   assert.match(html, /地牢枪手/);
   assert.match(html, /装甲峡谷/);
-  assert.match(html, /15(?:<!-- -->)? 款游戏在线/);
+  assert.match(html, /尘土拉力/);
+  assert.match(html, /微型赛车/);
+  assert.match(html, /霓虹赛车/);
+  assert.match(html, /公路追风/);
+  assert.match(html, /19(?:<!-- -->)? 款游戏在线/);
   assert.match(html, /href="\/play\/police-chase\/index\.html"/);
   assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
   assert.match(html, /href="\/play\/armor-alley\/index\.html"/);
+  assert.match(html, /href="\/play\/trigger-rally\/index\.html"/);
+  assert.match(html, /href="\/play\/micro-racing\/index\.html"/);
+  assert.match(html, /href="\/play\/racez\/index\.html"/);
+  assert.match(html, /href="\/play\/javascript-racer\/index\.html"/);
   assert.match(html, /placeholder="搜索游戏、玩法或标签"/);
   assert.match(html, /aria-label="按类型筛选游戏"/);
   assert.match(html, /class="game-card gold-game"/);
@@ -101,6 +109,10 @@ test("ships every game as a same-origin embedded build", async () => {
     "hextris",
     "tosios",
     "armor-alley",
+    "trigger-rally",
+    "micro-racing",
+    "racez",
+    "javascript-racer",
   ];
 
   for (const slug of slugs) {
@@ -118,6 +130,24 @@ test("ships every game as a same-origin embedded build", async () => {
     assert.doesNotMatch(html, new RegExp(`/embedded/${slug}/embedded/`));
     assert.doesNotMatch(html, new RegExp(`\\./embedded/${slug}/`));
   }
+});
+
+test("provides Micro Racing behind the shared portal port", async () => {
+  const serverSource = await readFile(
+    new URL("../lan/micro-racing-server.ts", import.meta.url),
+    "utf8",
+  );
+  const viteSource = await readFile(
+    new URL("../vite.config.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serverSource, /"micro-racing"/);
+  assert.match(serverSource, /"server\.js"/);
+  assert.match(serverSource, /MICRO_RACING_INTERNAL_PORT/);
+  assert.match(viteSource, /microRacingLanServer/);
+  assert.match(viteSource, /"\/micro-racing-service"/);
+  assert.match(viteSource, /ws: true/);
 });
 
 test("provides a local TOSIOS room process behind the portal proxy", async () => {

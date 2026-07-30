@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head><meta name="playroom-embedded" content="trigger-rally">
+    <title>Trigger Rally</title>
+    <meta name="description" content="Fast arcade rally racing action! Play in your browser with WebGL 3D graphics.">
+    <link rel="stylesheet" href="css/unified.css">
+    <!--<link rel="icon" href="/embedded/trigger-rally/favicon.png">-->
+  </head>
+  <body>
+    <div id="unified-container"></div><img src="images/icon-128.png" style="display:none" title="Trigger Rally icon">
+    <script>
+      if (location.pathname.endsWith("/embedded/trigger-rally/index.html")) {
+        history.replaceState(
+          null,
+          "",
+          location.pathname.slice(0, -"index.html".length) +
+            location.search +
+            location.hash
+        );
+      }
+      window.__INITIAL_PATH__ =
+        sessionStorage.redirect ||
+        (location.pathname + location.search + location.hash);
+      delete sessionStorage.redirect;
+    </script>
+    <script data-main="scripts/main" src="js/require.js"></script>
+  </body>
+</html>

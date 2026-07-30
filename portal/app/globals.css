@@ -878,6 +878,42 @@ nav a:hover::after {
   object-position: 55% center;
 }
 
+.trigger-rally-game {
+  color: #f7efe3;
+  background: #56351f;
+}
+
+.micro-racing-game {
+  color: #ecfff3;
+  background: #234739;
+}
+
+.racez-game {
+  color: #f8f7ff;
+  background: #311d61;
+}
+
+.racez-game .card-cover {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 86, 164, 0.72), transparent 31%),
+    repeating-linear-gradient(135deg, #1b1040 0 22px, #241650 22px 44px);
+}
+
+.racez-game .card-cover img {
+  object-fit: contain;
+  padding: 34px;
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.38));
+}
+
+.javascript-racer-game {
+  color: #fff3db;
+  background: #244f75;
+}
+
+.javascript-racer-game .card-cover img {
+  object-position: center top;
+}
+
 .game-card:hover .card-cover img {
   transform: scale(1.06);
 }

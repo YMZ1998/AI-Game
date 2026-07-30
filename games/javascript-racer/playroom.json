@@ -1,0 +1,6 @@
+{
+  "type": "static",
+  "source": "public",
+  "entry": "v4.final.html",
+  "upstream": "https://github.com/jakesgordon/javascript-racer"
+}

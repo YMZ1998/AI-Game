@@ -1,0 +1,47 @@
+.gui-container
+  .text-panel
+
+    h2
+      span.favorite
+      | 
+      span.name= name
+
+    h3
+      a.route.drivebutton(href="/TriggerRally/server/public/track/#{id}/drive") &gt; Drive &lt;
+      |  this track by 
+      span.author
+      |  (Drive: 
+      span.count_drive= count_drive
+      | , Copy: 
+      span.count_copy= count_copy
+      | , Fav: 
+      span.count_fav= count_fav
+      | )
+
+    //- h3 Top Times
+
+    form
+      label.radioAllTimes
+        input(type='radio', name="runsListOptions", value='all times')
+        | All times
+      label.radioMyTimes
+        input(type='radio', name="runsListOptions", value='my times')
+        | My times
+      label.radioLeaderboard
+        input(type='radio', name="runsListOptions", value='ranking')
+        | Leaderboard
+
+    table.runlist.list
+      tr
+        td
+        td Driver
+        td Time
+        td Car
+        td
+        td Recorded
+        td
+        td
+
+    h3 Comments
+
+    .comments-view
