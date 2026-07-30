@@ -23,7 +23,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders all fifteen game tickets", async () => {
+test("server-renders all fifteen game cards", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -49,6 +49,9 @@ test("server-renders all fifteen game tickets", async () => {
   assert.match(html, /href="\/play\/police-chase\/index\.html"/);
   assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
   assert.match(html, /href="\/play\/armor-alley\/index\.html"/);
+  assert.match(html, /placeholder="搜索游戏、玩法或标签"/);
+  assert.match(html, /aria-label="按类型筛选游戏"/);
+  assert.match(html, /class="game-card gold-game"/);
 });
 
 test("includes accessible game links and metadata", async () => {

@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { games } from "./game-catalog";
+import { GameGallery } from "./game-gallery";
 
 export default function Home() {
   return (
@@ -61,49 +61,10 @@ export default function Home() {
         <div className="section-heading">
           <span>NOW PLAYING</span>
           <h2>今天玩什么？</h2>
-          <p>选择一张游戏票，立即进入。</p>
+          <p>搜索或筛选，挑一张卡片立即开玩。</p>
         </div>
 
-        <div className="game-grid">
-          {games.map((game) => (
-            <a
-              className={`game-ticket ${game.className}`}
-              href={`/play/${game.slug}/index.html`}
-              key={game.title}
-              aria-label={`开始玩${game.title}`}
-            >
-              <div className="ticket-image">
-                <Image
-                  src={game.image}
-                  alt={`${game.title}游戏封面`}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 760px) 100vw, 50vw"
-                  priority
-                />
-                <div className="image-shade" />
-                <span className="game-number">{game.number}</span>
-                <div className="ticket-labels">
-                  {game.tags.map((tag) => (
-                    <span key={tag}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="ticket-copy">
-                <div>
-                  <span className="game-english">{game.english}</span>
-                  <h3>{game.title}</h3>
-                  <p>{game.description}</p>
-                </div>
-                <div className="play-button">
-                  <span>开始游戏</span>
-                  <i>↗</i>
-                </div>
-              </div>
-              <div className="perforation" aria-hidden="true" />
-            </a>
-          ))}
-        </div>
+        <GameGallery games={games} />
       </section>
 
       <section className="about-section" id="about">

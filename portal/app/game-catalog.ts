@@ -6,6 +6,7 @@ export type GameCatalogItem = {
   description: string;
   image: string;
   tags: string[];
+  kind: "街机" | "棋牌" | "动作" | "射击" | "益智" | "社交" | "竞速" | "联机" | "策略";
   className: string;
 };
 
@@ -18,6 +19,7 @@ export const games: GameCatalogItem[] = [
     description: "看准时机放下抓钩，在岩层深处寻找金块与钻石。",
     image: "/gold-miner.webp",
     tags: ["街机", "单人", "50 秒"],
+    kind: "街机",
     className: "gold-game",
   },
   {
@@ -28,6 +30,7 @@ export const games: GameCatalogItem[] = [
     description: "抢地主、组牌、压制，与两位电脑牌手打完一局。",
     image: "/doudizhu.webp",
     tags: ["棋牌", "三人", "策略"],
+    kind: "棋牌",
     className: "card-game",
   },
   {
@@ -38,6 +41,7 @@ export const games: GameCatalogItem[] = [
     description: "穿过清凉水上街区，放下泡泡、炸开箱子，用连锁水花击败捣蛋怪。",
     image: "/bubble-battle.webp",
     tags: ["动作", "单人", "连锁爆破"],
+    kind: "动作",
     className: "bubble-game",
   },
   {
@@ -48,6 +52,7 @@ export const games: GameCatalogItem[] = [
     description: "摆动准星、发射手铐，在倒计时结束前抓住小偷并追回证物。",
     image: "/police-chase.png",
     tags: ["街机", "单人", "连击追捕"],
+    kind: "射击",
     className: "police-game",
   },
   {
@@ -58,6 +63,7 @@ export const games: GameCatalogItem[] = [
     description: "突入港口仓库，以第一人称视角清除敌方机器人，并在倒计时结束前拆除装置。",
     image: "/critical-operation.svg",
     tags: ["第一人称", "战术射击", "拆弹"],
+    kind: "射击",
     className: "tactical-game",
   },
   {
@@ -68,6 +74,7 @@ export const games: GameCatalogItem[] = [
     description: "手动完成经典堆叠，或交给两步前瞻 AI，并实时观察它选择旋转与落点。",
     image: "/tetris-game.webp",
     tags: ["益智", "单人", "AI 自动"],
+    kind: "益智",
     className: "tetris-game",
   },
   {
@@ -79,6 +86,7 @@ export const games: GameCatalogItem[] = [
       "无需账号，带着随机代号进入局域网频道，围绕今晚的话题交换回应与共鸣。",
     image: "/anonymous-chat.svg",
     tags: ["社交", "局域网", "匿名"],
+    kind: "社交",
     className: "chat-game",
   },
   {
@@ -89,6 +97,7 @@ export const games: GameCatalogItem[] = [
     description: "穿过霓虹迷宫吃完豆子，利用能量豆反击幽灵，并挑战连续十二关。",
     image: "/pacman.svg",
     tags: ["街机", "单人", "迷宫"],
+    kind: "街机",
     className: "pacman-game",
   },
   {
@@ -99,6 +108,7 @@ export const games: GameCatalogItem[] = [
     description: "把棋子投入七列棋盘，率先横向、纵向或斜向连成四子；支持人机和本地双人。",
     image: "/connect-four.svg",
     tags: ["棋类", "人机", "双人"],
+    kind: "棋牌",
     className: "connect-four-game",
   },
   {
@@ -109,6 +119,7 @@ export const games: GameCatalogItem[] = [
     description: "滑动数字方块，让相同数字相遇合并，在棋盘被填满之前抵达 2048。",
     image: "/2048.svg",
     tags: ["益智", "单人", "数字"],
+    kind: "益智",
     className: "number-game",
   },
   {
@@ -119,6 +130,7 @@ export const games: GameCatalogItem[] = [
     description: "驾驶矢量飞船穿越陨石带，旋转、推进并射击，在碎石围攻中刷新得分。",
     image: "/asteroids.svg",
     tags: ["街机", "射击", "复古"],
+    kind: "射击",
     className: "asteroids-game",
   },
   {
@@ -129,6 +141,7 @@ export const games: GameCatalogItem[] = [
     description: "进入 WebGL 未来都市赛道，用键盘或触控驾驶反重力赛车冲击最快圈速。",
     image: "/hexgl.svg",
     tags: ["竞速", "3D", "WebGL"],
+    kind: "竞速",
     className: "hexgl-game",
   },
   {
@@ -139,6 +152,7 @@ export const games: GameCatalogItem[] = [
     description: "旋转六角核心接住彩色方块，让同色边连续消除，在加速坠落中维持节奏。",
     image: "/hextris.svg",
     tags: ["益智", "反应", "触控"],
+    kind: "益智",
     className: "hextris-game",
   },
   {
@@ -149,6 +163,7 @@ export const games: GameCatalogItem[] = [
     description: "创建本地房间，与同一局域网的队友进入像素地牢，闪避怪物并争夺排行榜。",
     image: "/tosios.svg",
     tags: ["联机", "射击", "局域网"],
+    kind: "联机",
     className: "tosios-game",
   },
   {
@@ -159,6 +174,7 @@ export const games: GameCatalogItem[] = [
     description: "驾驶直升机掩护地面车队，购买单位、占领碉堡，在经典横向战场上推进前线。",
     image: "/armor-alley.svg",
     tags: ["策略", "动作", "战役"],
+    kind: "策略",
     className: "armor-game",
   },
 ];
