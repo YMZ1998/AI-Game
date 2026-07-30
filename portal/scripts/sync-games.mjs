@@ -104,6 +104,30 @@ const gameCatalog = [
     title: "公路追风",
     english: "JAVASCRIPT RACER",
   },
+  {
+    slug: "solitairey",
+    number: "20",
+    title: "百变接龙",
+    english: "SOLITAIREY",
+  },
+  {
+    slug: "js-solitaire",
+    number: "21",
+    title: "经典纸牌",
+    english: "KLONDIKE",
+  },
+  {
+    slug: "blackjack",
+    number: "22",
+    title: "经典二十一点",
+    english: "BLACKJACK",
+  },
+  {
+    slug: "multiplayer-blackjack",
+    number: "23",
+    title: "联机二十一点",
+    english: "BLACKJACK ROOMS",
+  },
 ];
 
 const gameHints = {
@@ -126,6 +150,10 @@ const gameHints = {
   "micro-racing": "创建房间并按需加入电脑车手，再用方向键驾驶。",
   racez: "选择车辆与赛道后，用 WASD 驾驶并依次通过检查点。",
   "javascript-racer": "使用方向键驾驶，提前减速可以更稳定地通过弯道。",
+  solitairey: "先选择一种接龙玩法，再按规则点击或拖动牌组完成布局。",
+  "js-solitaire": "点击可自动移动到首个合法位置；也可以按住牌面拖动整列。",
+  blackjack: "选择要牌或停牌，让你的点数尽量接近 21 且不要爆牌。",
+  "multiplayer-blackjack": "创建并分享房间号；房主等玩家加入后开始，轮到你时选择要牌或停牌。",
 };
 
 async function exists(target) {

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#123e2a">
+    <title>经典二十一点</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="blackjack.js" defer></script>
+</head>
+<body>
+    <main class="table">
+        <header>
+            <p>PLAYER VS DEALER</p>
+            <h1>经典二十一点</h1>
+            <button id="sounds-btn" type="button" aria-pressed="true" aria-label="关闭声音">声音：开</button>
+        </header>
+
+        <p class="rule">点数尽量接近 21，但不要超过。庄家达到 17 点后停牌。</p>
+        <h2 id="game-status" aria-live="polite"></h2>
+
+        <section class="hand">
+            <div class="hand-heading">
+                <h2>庄家</h2>
+                <strong id="dealer-score">0</strong>
+            </div>
+            <div id="dealer-hand" class="cards" aria-label="庄家的牌"></div>
+        </section>
+
+        <section class="hand">
+            <div class="hand-heading">
+                <h2>你的手牌</h2>
+                <strong id="player-score">0</strong>
+            </div>
+            <div id="player-hand" class="cards" aria-label="你的牌"></div>
+        </section>
+
+        <div class="actions">
+            <button id="hit-btn" type="button">要牌</button>
+            <button id="stay-btn" type="button">停牌</button>
+            <button id="play-again-btn" type="button">再玩一局</button>
+        </div>
+    </main>
+</body>
+</html>

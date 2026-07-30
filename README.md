@@ -10,7 +10,7 @@
 npm run dev
 ```
 
-访问 `http://localhost:3003`。十九款游戏均从大厅同源加载；斗地主、匿名夜话、地牢枪手和微型赛车的实时服务也由大厅进程统一提供。项目只用于本地和局域网运行，不会自动发布到线上。
+访问 `http://localhost:3003`。二十三款游戏均从大厅同源加载；斗地主、匿名夜话、地牢枪手、微型赛车和联机二十一点的实时服务也由大厅进程统一提供。项目只用于本地和局域网运行，不会自动发布到线上。
 
 ## 游戏列表
 
@@ -35,6 +35,10 @@ npm run dev
 | 17 | 微型赛车 | [`games/micro-racing`](games/micro-racing) | 人机 / 实时房间 |
 | 18 | 霓虹赛车 | [`games/racez`](games/racez) | 单人练习 / 在线联机 |
 | 19 | 公路追风 | [`games/javascript-racer`](games/javascript-racer) | 单人 |
+| 20 | 百变接龙 | [`games/solitairey`](games/solitairey) | 单人 / 16 种玩法 |
+| 21 | 经典纸牌 | [`games/js-solitaire`](games/js-solitaire) | 单人 |
+| 22 | 经典二十一点 | [`games/blackjack`](games/blackjack) | 人机 |
+| 23 | 联机二十一点 | [`games/multiplayer-blackjack`](games/multiplayer-blackjack) | 局域网多人 |
 
 ## 目录约定
 

@@ -916,6 +916,33 @@ nav a:hover::after {
   object-position: center top;
 }
 
+.solitaire-game {
+  color: #fff9df;
+  background: #174c2d;
+}
+
+.classic-solitaire-game {
+  color: #f4ffff;
+  background: #00746f;
+}
+
+.blackjack-game {
+  color: #fff5dc;
+  background: #1f6b45;
+}
+
+.multiplayer-blackjack-game {
+  color: #fff5dc;
+  background: #10151b;
+}
+
+.solitaire-game .card-cover img,
+.classic-solitaire-game .card-cover img,
+.blackjack-game .card-cover img,
+.multiplayer-blackjack-game .card-cover img {
+  object-position: center top;
+}
+
 .game-card:hover .card-cover img {
   transform: scale(1.06);
 }

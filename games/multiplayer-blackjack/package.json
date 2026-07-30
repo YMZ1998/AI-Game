@@ -1,0 +1,13 @@
+{
+  "name": "playroom-multiplayer-blackjack",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "design:lint": "npx --yes @google/design.md@0.4.0 lint DESIGN.md",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "express": "4.22.2",
+    "socket.io": "4.8.3"
+  }
+}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!-- Code By Webdevtrick ( https://webdevtrick.com )-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10151b">
+  <title>多人二十一点</title>
+  <link rel="stylesheet" href="./vendor/normalize.css">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <h1 class="blackjack" id="bj">多人二十一点</h1>
+  <div class="form">
+      
+      <ul class="top-area">
+        <li class="tab active"><a href="#createRoom">创建房间</a></li>
+        <li class="tab"><a href="#joinRoom">加入房间</a></li>
+      </ul>
+      
+      <div class="tab-content">
+        <div id="createRoom">   
+          <h2>创建房间</h2>
+          
+          <form action="game.html" method="get">
+          
+          
+            <div class="label-field">
+                <label for="create-username">玩家名称</label>
+              <input id="create-username" type="text" name="username" required maxlength="16" placeholder="输入玩家名称" />
+            </div>
+        
+          
+ 
+          <div class="label-field">
+            <label for="roomid">房间号</label>
+            <input type="text" readonly id="roomid" name="roomid" aria-describedby="room-tip"/>
+            <small id="room-tip">把这个房间号发给同一局域网中的朋友。</small>
+          </div>
+          
+          <div class="label-field">
+            <label for="create-score">本局筹码</label>
+            <input id="create-score" type="number" min="1" max="9999" value="100" required name="bidamt"/>
+          </div>
+
+          <div class="label-field">
+            <input type="hidden"  required name="type" value="1"/>
+          </div>
+          
+          <button type="submit" class="button button-block">创建房间</button>
+          
+          </form>
+ 
+        </div>
+        
+        <div id="joinRoom" >   
+          <h2>加入房间</h2>
+          
+          <form action="game.html" method="get">
+          
+          
+            <div class="label-field">
+                <label for="join-username">玩家名称</label>
+              <input id="join-username" type="text" required maxlength="16" name="username" placeholder="输入玩家名称" />
+            </div>
+        
+          
+ 
+          <div class="label-field">
+            <label for="join-room">房间号</label>
+            <input id="join-room" type="text" required maxlength="12" name="roomid" placeholder="输入朋友分享的房间号"/>
+          </div>
+          
+          <div class="label-field">
+            <label for="join-score">本局筹码</label>
+            <input id="join-score" type="number" min="1" max="9999" value="100" required name="bidamt"/>
+          </div>
+          
+          <div class="label-field">
+            <input type="hidden"  required name="type" value="0"/>
+          </div>
+
+          <button type="submit" class="button button-block">加入房间</button>
+          
+          </form>
+ 
+        </div>
+        
+      </div>  
+</div>
+ 
+  <script src="./vendor/jquery.min.js"></script>
+  <script src="./js/index.js"></script>
+ 
+</body>
+</html>

@@ -12,6 +12,10 @@ import {
   MICRO_RACING_INTERNAL_PORT,
   microRacingLanServer,
 } from "./lan/micro-racing-server";
+import {
+  MULTIPLAYER_BLACKJACK_INTERNAL_PORT,
+  multiplayerBlackjackServer,
+} from "./lan/multiplayer-blackjack-server";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -73,6 +77,13 @@ export default defineConfig(async () => {
           rewrite: (requestPath) =>
             requestPath.replace(/^\/micro-racing-service/, "") || "/",
         },
+        "/multiplayer-blackjack-service": {
+          target: `http://127.0.0.1:${MULTIPLAYER_BLACKJACK_INTERNAL_PORT}`,
+          changeOrigin: true,
+          ws: true,
+          rewrite: (requestPath) =>
+            requestPath.replace(/^\/multiplayer-blackjack-service/, "") || "/",
+        },
       },
       watch: isCodexSeatbeltSandbox
         ? {
@@ -87,6 +98,7 @@ export default defineConfig(async () => {
       anonymousChatServer(),
       tosiosLanServer(),
       microRacingLanServer(),
+      multiplayerBlackjackServer(),
       vinext(),
       sites(),
       cloudflare({

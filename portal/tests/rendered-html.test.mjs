@@ -23,7 +23,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders all nineteen game cards", async () => {
+test("server-renders all twenty-three game cards", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -49,7 +49,11 @@ test("server-renders all nineteen game cards", async () => {
   assert.match(html, /微型赛车/);
   assert.match(html, /霓虹赛车/);
   assert.match(html, /公路追风/);
-  assert.match(html, /19(?:<!-- -->)? 款游戏在线/);
+  assert.match(html, /百变接龙/);
+  assert.match(html, /经典纸牌/);
+  assert.match(html, /经典二十一点/);
+  assert.match(html, /联机二十一点/);
+  assert.match(html, /23(?:<!-- -->)? 款游戏在线/);
   assert.match(html, /href="\/play\/police-chase\/index\.html"/);
   assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
   assert.match(html, /href="\/play\/armor-alley\/index\.html"/);
@@ -57,6 +61,10 @@ test("server-renders all nineteen game cards", async () => {
   assert.match(html, /href="\/play\/micro-racing\/index\.html"/);
   assert.match(html, /href="\/play\/racez\/index\.html"/);
   assert.match(html, /href="\/play\/javascript-racer\/index\.html"/);
+  assert.match(html, /href="\/play\/solitairey\/index\.html"/);
+  assert.match(html, /href="\/play\/js-solitaire\/index\.html"/);
+  assert.match(html, /href="\/play\/blackjack\/index\.html"/);
+  assert.match(html, /href="\/play\/multiplayer-blackjack\/index\.html"/);
   assert.match(html, /placeholder="搜索游戏、玩法或标签"/);
   assert.match(html, /aria-label="按类型筛选游戏"/);
   assert.match(html, /class="game-card gold-game"/);
@@ -136,6 +144,10 @@ test("ships every game as a same-origin embedded build", async () => {
     "micro-racing",
     "racez",
     "javascript-racer",
+    "solitairey",
+    "js-solitaire",
+    "blackjack",
+    "multiplayer-blackjack",
   ];
 
   for (const slug of slugs) {
@@ -153,6 +165,34 @@ test("ships every game as a same-origin embedded build", async () => {
     assert.doesNotMatch(html, new RegExp(`/embedded/${slug}/embedded/`));
     assert.doesNotMatch(html, new RegExp(`\\./embedded/${slug}/`));
   }
+});
+
+test("ships Solitairey's local YUI runtime and self-hosts multiplayer assets", async () => {
+  const yuiModule = await readFile(
+    new URL(
+      "../public/embedded/solitairey/js/yui-unpack/yui/build/node-core/node-core-min.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const multiplayerIndex = await readFile(
+    new URL(
+      "../public/embedded/multiplayer-blackjack/index.html",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const multiplayerGame = await readFile(
+    new URL(
+      "../public/embedded/multiplayer-blackjack/game.html",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(yuiModule, /YUI\.add\("node-core"/);
+  assert.doesNotMatch(multiplayerIndex, /(?:src|href)=["']https?:\/\//);
+  assert.doesNotMatch(multiplayerGame, /(?:src|href)=["']https?:\/\//);
 });
 
 test("rewrites Trigger Rally's extensionless API fixture asset paths", async () => {
@@ -311,6 +351,24 @@ test("provides Micro Racing behind the shared portal port", async () => {
   assert.match(serverSource, /MICRO_RACING_INTERNAL_PORT/);
   assert.match(viteSource, /microRacingLanServer/);
   assert.match(viteSource, /"\/micro-racing-service"/);
+  assert.match(viteSource, /ws: true/);
+});
+
+test("provides Multiplayer Blackjack behind the shared portal port", async () => {
+  const serverSource = await readFile(
+    new URL("../lan/multiplayer-blackjack-server.ts", import.meta.url),
+    "utf8",
+  );
+  const viteSource = await readFile(
+    new URL("../vite.config.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serverSource, /multiplayer-blackjack/);
+  assert.match(serverSource, /server\.js/);
+  assert.match(serverSource, /MULTIPLAYER_BLACKJACK_INTERNAL_PORT/);
+  assert.match(viteSource, /multiplayerBlackjackServer/);
+  assert.match(viteSource, /"\/multiplayer-blackjack-service"/);
   assert.match(viteSource, /ws: true/);
 });
 

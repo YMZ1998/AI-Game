@@ -42,7 +42,7 @@ export default function Home() {
         </div>
         <div className="hero-bottom">
           <p>
-            十九款随时开玩的小游戏，
+            二十三款随时开玩的小游戏，
             <br />
             一个入口，点开就玩。
           </p>
@@ -68,7 +68,7 @@ export default function Home() {
       </section>
 
       <section className="about-section" id="about">
-        <div className="about-index">20</div>
+        <div className="about-index">24</div>
         <div className="about-copy">
           <span>NEXT UP</span>
           <h2>下一款，正在路上。</h2>
