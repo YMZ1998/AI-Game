@@ -42,6 +42,16 @@ bkcore.hexgl.ShipControls = function(ctx)
 	this.shieldDamage = 0.25;
 	this.driftLerp = 0.35;
 	this.angularLerp = 0.35;
+	this.driftMinSpeedRatio = 0.35;
+	this.driftChargeRate = 0.0045;
+	this.driftSpeedCost = 0.008;
+	this.nitro = 0.0;
+	this.maxNitro = 1.0;
+	this.nitroDrainRate = 0.012;
+	this.nitroMinStart = 0.12;
+	this.nitroSpeed = this.maxSpeed * 0.55;
+	this.nitroActive = false;
+	this.isDrifting = false;
 
 	this.movement = new THREE.Vector3(0,0,0);
 	this.rotation = new THREE.Vector3(0,0,0);
@@ -109,7 +119,9 @@ bkcore.hexgl.ShipControls = function(ctx)
 		right: false,
 		ltrigger: false,
 		rtrigger: false,
-		use: false
+		use: false,
+		drift: false,
+		nitro: false
 	};
 
 	this.collision = {
@@ -124,6 +136,11 @@ bkcore.hexgl.ShipControls = function(ctx)
 
 	if(ctx.controlType == 1 && bkcore.controllers.TouchController.isCompatible())
 	{
+		var touchActions = domElement.getElementById('touch-actions');
+		if(touchActions) touchActions.style.display = 'flex';
+		var raceControlHint = domElement.getElementById('race-control-hint');
+		if(raceControlHint) raceControlHint.style.display = 'none';
+
 		this.touchController = new bkcore.controllers.TouchController(
 			domElement, ctx.width/2,
 			function(state, touch, event){
@@ -139,6 +156,35 @@ bkcore.hexgl.ShipControls = function(ctx)
 						self.key.forward = true;
 				}
 			});
+
+		function bindTouchAction(id, key)
+		{
+			var button = domElement.getElementById(id);
+			if(!button) return;
+
+			function press(event)
+			{
+				event.preventDefault();
+				event.stopPropagation();
+				self.key[key] = true;
+				button.className = 'touch-action is-active';
+			}
+
+			function release(event)
+			{
+				event.preventDefault();
+				event.stopPropagation();
+				self.key[key] = false;
+				button.className = 'touch-action';
+			}
+
+			button.addEventListener('touchstart', press, false);
+			button.addEventListener('touchend', release, false);
+			button.addEventListener('touchcancel', release, false);
+		}
+
+		bindTouchAction('drift-control', 'drift');
+		bindTouchAction('nitro-control', 'nitro');
 	}
 	else if(ctx.controlType == 4 && bkcore.controllers.OrientationController.isCompatible())
 	{
@@ -165,6 +211,8 @@ bkcore.hexgl.ShipControls = function(ctx)
           self.key.forward = controller.acceleration > 0;
           self.key.ltrigger = controller.ltrigger > 0;
           self.key.rtrigger = controller.rtrigger > 0;
+          self.key.drift = controller.drift > 0;
+          self.key.nitro = controller.nitro > 0;
           self.key.left = controller.lstickx < -0.1;
           self.key.right = controller.lstickx > 0.1;
       });
@@ -253,19 +301,28 @@ bkcore.hexgl.ShipControls = function(ctx)
 		switch(event.keyCode)
 		{
 			case 38: /*up*/	self.key.forward = true; break;
+			case 87: /*W*/	self.key.forward = true; break;
 
 			case 40: /*down*/self.key.backward = true; break;
+			case 83: /*S*/self.key.backward = true; break;
 
 			case 37: /*left*/self.key.left = true; break;
+			case 65: /*A*/self.key.left = true; break;
 
 			case 39: /*right*/self.key.right = true; break;
+			case 68: /*D*/self.key.right = true; break;
 
 			case 81: /*Q*/self.key.ltrigger = true; break;
-			case 65: /*A*/self.key.ltrigger = true; break;
 
-			case 68: /*D*/self.key.rtrigger = true; break;
 			case 69: /*E*/self.key.rtrigger = true; break;
+
+			case 16: /*shift*/self.key.drift = true; break;
+			case 32: /*space*/self.key.nitro = true; break;
+			case 78: /*N*/self.key.nitro = true; break;
 		}
+
+		if(event.keyCode == 16 || event.keyCode == 32 || (event.keyCode >= 37 && event.keyCode <= 40))
+			event.preventDefault();
 	};
 
 	function onKeyUp(event)
@@ -273,19 +330,28 @@ bkcore.hexgl.ShipControls = function(ctx)
 		switch(event.keyCode)
 		{
 			case 38: /*up*/	self.key.forward = false; break;
+			case 87: /*W*/	self.key.forward = false; break;
 
 			case 40: /*down*/self.key.backward = false; break;
+			case 83: /*S*/self.key.backward = false; break;
 
 			case 37: /*left*/self.key.left = false; break;
+			case 65: /*A*/self.key.left = false; break;
 
 			case 39: /*right*/self.key.right = false; break;
+			case 68: /*D*/self.key.right = false; break;
 
 			case 81: /*Q*/self.key.ltrigger = false; break;
-			case 65: /*A*/self.key.ltrigger = false; break;
 
-			case 68: /*D*/self.key.rtrigger = false; break;
 			case 69: /*E*/self.key.rtrigger = false; break;
+
+			case 16: /*shift*/self.key.drift = false; break;
+			case 32: /*space*/self.key.nitro = false; break;
+			case 78: /*N*/self.key.nitro = false; break;
 		}
+
+		if(event.keyCode == 16 || event.keyCode == 32 || (event.keyCode >= 37 && event.keyCode <= 40))
+			event.preventDefault();
 	};
 
 	domElement.addEventListener('keydown', onKeyDown, false);
@@ -310,6 +376,10 @@ bkcore.hexgl.ShipControls.prototype.reset = function(position, rotation)
 	this.speed = 0.0;
 	this.speedRatio = 0.0;
 	this.boost = 0.0;
+	this.nitro = 0.0;
+	this.nitroActive = false;
+	this.isDrifting = false;
+	bkcore.Audio.stop('boost');
 	this.shield = this.maxShield;
 	this.destroyed = false;
 
@@ -378,6 +448,7 @@ bkcore.hexgl.ShipControls.prototype.update = function(dt)
 	var rollAmount = 0.0;
 	var angularAmount = 0.0;
 	var yawLeap = 0.0;
+	var steeringInput = 0.0;
 
 	if(this.leapBridge != null && this.leapBridge.hasHands)
 	{
@@ -390,17 +461,20 @@ bkcore.hexgl.ShipControls.prototype.update = function(dt)
 
 		if(this.touchController != null)
 		{
-			angularAmount -= this.touchController.stickVector.x/100 * this.angularSpeed * dt;
+			steeringInput = -this.touchController.stickVector.x/100;
+			angularAmount += steeringInput * this.angularSpeed * dt;
 			rollAmount += this.touchController.stickVector.x/100 * this.rollAngle;
 		}
 		else if(this.orientationController != null)
 		{
-			angularAmount += this.orientationController.beta/45 * this.angularSpeed * dt;
+			steeringInput = this.orientationController.beta/45;
+			angularAmount += steeringInput * this.angularSpeed * dt;
 			rollAmount -= this.orientationController.beta/45 * this.rollAngle;
 		}
 		else if(this.gamepadController != null && this.gamepadController.updateAvailable())
 		{
-			angularAmount -= this.gamepadController.lstickx * this.angularSpeed * dt;
+			steeringInput = -this.gamepadController.lstickx;
+			angularAmount += steeringInput * this.angularSpeed * dt;
 			rollAmount += this.gamepadController.lstickx * this.rollAngle;
 		}
 		else if(this.leapBridge != null && this.leapBridge.hasHands)
@@ -412,11 +486,13 @@ bkcore.hexgl.ShipControls.prototype.update = function(dt)
 		{
 			if(this.key.left)
 			{
+				steeringInput += 1.0;
 				angularAmount += this.angularSpeed * dt;
 				rollAmount -= this.rollAngle;
 			}
 			if(this.key.right)
 			{
+				steeringInput -= 1.0;
 				angularAmount -= this.angularSpeed * dt;
 				rollAmount += this.rollAngle;
 			}
@@ -426,6 +502,8 @@ bkcore.hexgl.ShipControls.prototype.update = function(dt)
 			this.speed += this.thrust * dt;
 		else
 			this.speed -= this.airResist * dt;
+		if(this.key.backward)
+			this.speed -= this.airBrake * 1.4 * dt;
 		if(this.key.ltrigger)
 		{
 			if(this.key.left)
@@ -452,6 +530,35 @@ bkcore.hexgl.ShipControls.prototype.update = function(dt)
 				this.movement.z += this.speed * this.drift * dt;
 			rollAmount += this.rollAngle * 0.7;
 		}
+
+		this.isDrifting = this.key.drift
+			&& Math.abs(steeringInput) > 0.15
+			&& this.speed / this.maxSpeed >= this.driftMinSpeedRatio;
+
+		if(this.isDrifting)
+		{
+			var driftDirection = steeringInput > 0 ? 1 : -1;
+			var driftTarget = this.airDrift * 1.75 * driftDirection;
+			var driftIntensity = Math.min(1.0, Math.abs(steeringInput));
+
+			this.drift += (driftTarget - this.drift) * this.driftLerp;
+			this.movement.x += this.speed * this.drift * dt;
+			this.movement.z -= this.speed * Math.abs(this.drift) * 0.45 * dt;
+			this.speed -= this.driftSpeedCost * dt;
+			angularAmount += this.airAngularSpeed * 0.55 * steeringInput * dt;
+			rollAmount -= this.rollAngle * 0.35 * driftDirection;
+
+			if(!this.key.nitro)
+				this.nitro = Math.min(this.maxNitro,
+					this.nitro + this.driftChargeRate * driftIntensity * Math.max(0.4, this.speedRatio) * dt);
+		}
+
+		this.updateNitro(dt);
+	}
+	else
+	{
+		this.isDrifting = false;
+		this.stopNitro();
 	}
 
 	this.angular += (angularAmount - this.angular) * this.angularLerp;
@@ -589,7 +696,7 @@ bkcore.hexgl.ShipControls.prototype.boosterCheck = function(dt)
 	this.boost -= this.boosterDecay * dt;
 	if(this.boost < 0){
 		this.boost = 0.0;
-		bkcore.Audio.stop('boost');
+		if(!this.nitroActive) bkcore.Audio.stop('boost');
 	}
 
 	var x = Math.round(this.collisionMap.pixels.width/2 + this.dummy.position.x * this.collisionPixelRatio);
@@ -604,6 +711,37 @@ bkcore.hexgl.ShipControls.prototype.boosterCheck = function(dt)
 	}
 
 	this.movement.z += this.boost * dt;
+}
+
+bkcore.hexgl.ShipControls.prototype.updateNitro = function(dt)
+{
+	var wasActive = this.nitroActive;
+	var hasEnoughNitro = this.nitroActive ? this.nitro > 0.0 : this.nitro >= this.nitroMinStart;
+	var nextActive = this.key.nitro && hasEnoughNitro && this.speedRatio > 0.2;
+
+	if(nextActive && !wasActive)
+		bkcore.Audio.play('boost');
+	else if(!nextActive && wasActive && this.boost <= 0.0)
+		bkcore.Audio.stop('boost');
+
+	this.nitroActive = nextActive;
+
+	if(this.nitroActive)
+	{
+		this.nitro = Math.max(0.0, this.nitro - this.nitroDrainRate * dt);
+		this.movement.z += this.nitroSpeed * dt;
+
+		if(this.nitro <= 0.0)
+			this.stopNitro();
+	}
+}
+
+bkcore.hexgl.ShipControls.prototype.stopNitro = function()
+{
+	if(this.nitroActive && this.boost <= 0.0)
+		bkcore.Audio.stop('boost');
+
+	this.nitroActive = false;
 }
 
 bkcore.hexgl.ShipControls.prototype.collisionCheck = function(dt)
@@ -759,7 +897,7 @@ bkcore.hexgl.ShipControls.prototype.heightCheck = function(dt)
 bkcore.hexgl.ShipControls.prototype.getRealSpeed = function(scale)
 {
 	return Math.round(
-		(this.speed+this.boost)
+		(this.speed+this.boost+(this.nitroActive ? this.nitroSpeed : 0))
 		* (scale == undefined ? 1 : scale)
 	);
 };
@@ -768,18 +906,23 @@ bkcore.hexgl.ShipControls.prototype.getRealSpeedRatio = function()
 {
 	return Math.min(
 		this.maxSpeed,
-		this.speed+this.boost
+		this.speed+this.boost+(this.nitroActive ? this.nitroSpeed : 0)
 	) / this.maxSpeed;
 };
 
 bkcore.hexgl.ShipControls.prototype.getSpeedRatio = function()
 {
-	return (this.speed+this.boost)/ this.maxSpeed;
+	return (this.speed+this.boost+(this.nitroActive ? this.nitroSpeed : 0))/ this.maxSpeed;
 };
 
 bkcore.hexgl.ShipControls.prototype.getBoostRatio = function()
 {
-	return this.boost / this.boosterSpeed;
+	return Math.max(this.boost / this.boosterSpeed, this.nitroActive ? 1.5 : 0.0);
+};
+
+bkcore.hexgl.ShipControls.prototype.getNitroRatio = function()
+{
+	return this.nitro / this.maxNitro;
 };
 
 bkcore.hexgl.ShipControls.prototype.getShieldRatio = function()

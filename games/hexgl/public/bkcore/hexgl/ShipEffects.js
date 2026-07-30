@@ -120,6 +120,12 @@ bkcore.hexgl.ShipEffects.prototype.update = function(dt)
 		opacity = this.shipControls.key.forward ? 0.8 : 0.3 + boostRatio * 0.4;
 		scale = (this.shipControls.key.forward ? 1.0 : 0.8) + boostRatio * 0.5;
 		intensity = this.shipControls.key.forward ? 4.0 : 2.0;
+		if(this.shipControls.nitroActive)
+		{
+			opacity = 1.0;
+			scale += 0.6;
+			intensity = 7.5;
+		}
 		random = Math.random()*0.2;
 	}
 

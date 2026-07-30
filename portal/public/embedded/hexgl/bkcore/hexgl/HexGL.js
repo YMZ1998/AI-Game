@@ -441,6 +441,8 @@ bkcore.hexgl.HexGL.prototype.tweakShipControls = function()
 		c.angularLerp = 0.4;
 	}
 
+	c.nitroSpeed = c.maxSpeed * 0.55;
+
 	if(this.godmode)
 		c.shieldDamage = 0.0;
 }

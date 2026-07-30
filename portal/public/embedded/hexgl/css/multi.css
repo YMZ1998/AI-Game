@@ -183,6 +183,15 @@ html, body {
   background-size: 60% auto;
 }
 
+#step-2 #ctrl-help {
+  position: absolute;
+  right: 20px;
+  bottom: 28px;
+  left: 20px;
+  color: #d8f8ff;
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.82);
+}
+
 #step-3 {
   position: absolute;
   top: 0;
@@ -200,6 +209,87 @@ html, body {
   left: 0;
   width: 0%;
   background: white;
+}
+
+#race-control-hint {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 10000;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 9px 16px;
+  color: #d8f8ff;
+  background: rgba(2, 6, 13, 0.72);
+  border: 1px solid rgba(0, 229, 255, 0.52);
+  border-radius: 4px;
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.18);
+  font: 600 15px/1.2 Arial, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+#race-control-hint kbd {
+  display: inline-block;
+  min-width: 20px;
+  margin-right: 4px;
+  padding: 2px 6px;
+  color: #02060d;
+  background: #d8f8ff;
+  border-radius: 3px;
+  font: 800 12px/1.35 Arial, sans-serif;
+  text-align: center;
+}
+
+#touch-actions {
+  position: absolute;
+  right: 18px;
+  bottom: 24px;
+  z-index: 10001;
+  display: none;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.touch-action {
+  width: 82px;
+  height: 82px;
+  padding: 0;
+  color: #d8f8ff;
+  background: rgba(8, 24, 40, 0.82);
+  border: 2px solid #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.32);
+  font: 900 18px/1 Arial, sans-serif;
+  text-transform: uppercase;
+  touch-action: none;
+}
+
+.touch-action.is-active,
+.touch-action:active {
+  color: #02060d;
+  background: #7cff6b;
+  border-color: #7cff6b;
+  box-shadow: 0 0 28px rgba(124, 255, 107, 0.78);
+  transform: scale(0.94);
+}
+
+@media (max-width: 780px) {
+  #race-control-hint {
+    top: 10px;
+    gap: 8px;
+    max-width: calc(100vw - 28px);
+    padding: 7px 10px;
+    overflow: hidden;
+    font-size: 11px;
+  }
+
+  #race-control-hint span:nth-child(-n+2) {
+    display: none;
+  }
 }
 
 #step-5 {

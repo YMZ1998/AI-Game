@@ -825,6 +825,8 @@ nav a:hover::after {
   position: relative;
   min-width: 0;
   display: flex;
+  content-visibility: auto;
+  contain-intrinsic-size: 520px;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(16, 17, 24, 0.25);

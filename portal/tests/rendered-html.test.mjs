@@ -88,8 +88,31 @@ test("generates a static same-origin game shell", async () => {
   assert.match(html, /返回大厅/);
   assert.match(html, /重新载入/);
   assert.match(html, /全屏游玩/);
-  assert.match(html, /src="\/embedded\/tetris-game\/index\.html"/);
+  assert.match(html, /操作提示/);
+  assert.match(html, /快速上手/);
+  assert.match(html, /加载时间较长/);
+  assert.match(html, /serviceWorker\.register\("\/game-cache-sw\.js"\)/);
+  assert.match(html, /loading="eager" fetchpriority="high"/);
+  assert.match(html, /data-src="\/embedded\/tetris-game\/index\.html"/);
   assert.doesNotMatch(html, /localhost:\d+/);
+});
+
+test("ships a shared cache and recovery layer for all games", async () => {
+  const serviceWorker = await readFile(
+    new URL("../public/game-cache-sw.js", import.meta.url),
+    "utf8",
+  );
+  const syncSource = await readFile(
+    new URL("../scripts/sync-games.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serviceWorker, /playroom-game-assets-/);
+  assert.match(serviceWorker, /url\.pathname\.startsWith\("\/embedded\/"\)/);
+  assert.match(serviceWorker, /staleWhileRevalidate/);
+  assert.match(serviceWorker, /networkFirst/);
+  assert.match(syncSource, /const gameHints = \{/);
+  assert.match(syncSource, /"javascript-racer": "使用方向键驾驶/);
 });
 
 test("ships every game as a same-origin embedded build", async () => {

@@ -43,6 +43,9 @@ bkcore.hexgl.HUD = function(opts)
 	this.font = opts.font || "Arial";
 
 	this.time = "";
+	this.nitroRatio = 0.0;
+	this.isDrifting = false;
+	this.nitroActive = false;
 
 	this.message = "";
 	this.previousMessage = "";
@@ -119,7 +122,7 @@ bkcore.hexgl.HUD.prototype.resetTime = function()
 	this.time = "";
 }
 
-bkcore.hexgl.HUD.prototype.update = function(speed, speedRatio, shield, shieldRatio)
+bkcore.hexgl.HUD.prototype.update = function(speed, speedRatio, shield, shieldRatio, nitroRatio, isDrifting, nitroActive)
 {
 	var SCREEN_WIDTH = this.width;
 	var SCREEN_HEIGHT = this.height;
@@ -140,6 +143,9 @@ bkcore.hexgl.HUD.prototype.update = function(speed, speedRatio, shield, shieldRa
 	var nh = nw*r;
 	var oh = SCREEN_HEIGHT - nh;
 	var o = 0;
+	this.nitroRatio = Math.max(0.0, Math.min(1.0, nitroRatio || 0.0));
+	this.isDrifting = isDrifting === true;
+	this.nitroActive = nitroActive === true;
 	//speedbar
 	var ba = nh;
 	var bl = SCREEN_WIDTH/this.speedBarRatio;
@@ -190,6 +196,29 @@ bkcore.hexgl.HUD.prototype.update = function(speed, speedRatio, shield, shieldRa
 			this.ctx.font = (SCREEN_WIDTH/this.shieldFontRatio)+"px "+this.font;
 		    this.ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
 		    this.ctx.fillText(shield, SCREEN_HW, SCREEN_HEIGHT - nh*0.44);
+
+			// DRIFT / NITRO
+			var nitroW = Math.min(280, SCREEN_WIDTH * 0.22);
+			var nitroH = Math.max(8, SCREEN_WIDTH * 0.008);
+			var nitroX = SCREEN_WIDTH * 0.055;
+			var nitroY = SCREEN_HEIGHT - Math.max(58, SCREEN_WIDTH * 0.055);
+
+			this.ctx.save();
+			this.ctx.textAlign = "left";
+			this.ctx.font = Math.max(15, SCREEN_WIDTH/68)+"px "+this.font;
+			this.ctx.fillStyle = this.nitroActive ? "#7CFF6B" : "#D8F8FF";
+			this.ctx.shadowColor = this.nitroActive ? "#7CFF6B" : "#00E5FF";
+			this.ctx.shadowBlur = this.nitroActive ? 18 : 8;
+			this.ctx.fillText(this.nitroActive ? "NITRO BURST" : (this.isDrifting ? "DRIFT + NITRO" : "NITRO"), nitroX, nitroY-10);
+			this.ctx.shadowBlur = 0;
+			this.ctx.fillStyle = "rgba(2, 6, 13, 0.78)";
+			this.ctx.fillRect(nitroX, nitroY, nitroW, nitroH);
+			this.ctx.strokeStyle = "rgba(0, 229, 255, 0.75)";
+			this.ctx.lineWidth = 2;
+			this.ctx.strokeRect(nitroX, nitroY, nitroW, nitroH);
+			this.ctx.fillStyle = this.nitroActive ? "#7CFF6B" : "#00E5FF";
+			this.ctx.fillRect(nitroX+2, nitroY+2, Math.max(0, (nitroW-4)*this.nitroRatio), Math.max(0, nitroH-4));
+			this.ctx.restore();
 		}
 	}
 	else if(this.step == 1)

@@ -31,11 +31,15 @@ class GamepadController
     lt = gp.buttons[6]
     rt = gp.buttons[7]
     sel = gp.buttons[8]
+    drift = gp.buttons[4]
+    nitro = gp.buttons[1]
     # API fallback
     @acceleration = accel.pressed ? accel
     @ltrigger = lt.pressed ? lt
     @rtrigger = rt.pressed ? rt
     @select = sel.pressed ? sel
+    @drift = drift.pressed ? drift
+    @nitro = nitro.pressed ? nitro
     @buttonPressCallback this
     true
 

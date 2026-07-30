@@ -5,6 +5,18 @@ import { useMemo, useState } from "react";
 import type { GameCatalogItem } from "./game-catalog";
 
 const kinds = ["全部", "街机", "棋牌", "动作", "射击", "益智", "策略", "竞速", "联机", "社交"] as const;
+const warmedGames = new Set<string>();
+
+function warmGame(slug: string) {
+  if (warmedGames.has(slug)) return;
+  warmedGames.add(slug);
+
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.href = `/embedded/${slug}/index.html`;
+  link.as = "document";
+  document.head.append(link);
+}
 
 type GameGalleryProps = {
   games: GameCatalogItem[];
@@ -74,6 +86,8 @@ export function GameGallery({ games }: GameGalleryProps) {
               href={`/play/${game.slug}/index.html`}
               key={game.title}
               aria-label={`开始玩${game.title}`}
+              onPointerEnter={() => warmGame(game.slug)}
+              onFocus={() => warmGame(game.slug)}
             >
               <div className="card-cover">
                 <Image

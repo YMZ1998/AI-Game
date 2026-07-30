@@ -33,7 +33,7 @@
 
 
     GamepadController.prototype.updateAvailable = function() {
-      var accel, gamepads, gp, lt, rt, sel, _ref, _ref1, _ref2, _ref3;
+      var accel, drift, gamepads, gp, lt, nitro, rt, sel, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
       if (!this.active) {
         return false;
       }
@@ -50,10 +50,14 @@
       lt = gp.buttons[6];
       rt = gp.buttons[7];
       sel = gp.buttons[8];
+      drift = gp.buttons[4];
+      nitro = gp.buttons[1];
       this.acceleration = (_ref = accel.pressed) != null ? _ref : accel;
       this.ltrigger = (_ref1 = lt.pressed) != null ? _ref1 : lt;
       this.rtrigger = (_ref2 = rt.pressed) != null ? _ref2 : rt;
       this.select = (_ref3 = sel.pressed) != null ? _ref3 : sel;
+      this.drift = (_ref4 = drift.pressed) != null ? _ref4 : drift;
+      this.nitro = (_ref5 = nitro.pressed) != null ? _ref5 : nitro;
       this.buttonPressCallback(this);
       return true;
     };

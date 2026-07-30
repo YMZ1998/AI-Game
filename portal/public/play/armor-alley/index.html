@@ -23,11 +23,30 @@
       .identity small{color:#85868f;font-size:9px;font-weight:900;letter-spacing:.14em}
       .actions{display:flex;justify-content:flex-end;gap:8px}
       button{padding:0 15px}
-      .stage{position:relative;min-height:0;overflow:hidden;border:2px solid var(--acid);border-radius:17px;background:#08090d;box-shadow:0 0 0 4px var(--ink),0 0 0 5px rgba(232,255,76,.35)}
-      iframe{width:100%;height:100%;display:block;border:0;background:#08090d}
-      .status{position:absolute;z-index:2;top:12px;right:12px;display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(8,9,13,.82);backdrop-filter:blur(8px);font-size:9px;font-weight:900;letter-spacing:.09em;transition:opacity .18s ease,transform .18s ease}
+      .stage{position:relative;min-height:0;overflow:hidden;contain:strict;border:2px solid var(--acid);border-radius:17px;background:#08090d;box-shadow:0 0 0 4px var(--ink),0 0 0 5px rgba(232,255,76,.35)}
+      iframe{width:100%;height:100%;display:block;border:0;background:#08090d;touch-action:none}
+      .status{position:absolute;z-index:4;top:12px;right:12px;display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(8,9,13,.86);backdrop-filter:blur(8px);font-size:9px;font-weight:900;letter-spacing:.09em;transition:opacity .18s ease,transform .18s ease}
       .status i{width:8px;height:8px;border:2px solid rgba(243,237,223,.25);border-top-color:var(--acid);border-radius:50%;animation:spin .7s linear infinite}
       .status.done{opacity:0;transform:translateY(-5px);pointer-events:none}
+      .status.slow{border-color:rgba(232,255,76,.55)}
+      .status button{min-height:28px;padding:0 9px;border-color:rgba(243,237,223,.24);font-size:9px}
+      .status button[hidden]{display:none}
+      .tip{position:absolute;z-index:3;left:14px;bottom:14px;max-width:min(460px,calc(100% - 28px));display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:11px 12px;border:1px solid rgba(232,255,76,.5);border-radius:13px;background:rgba(8,9,13,.9);box-shadow:0 14px 40px rgba(0,0,0,.35);backdrop-filter:blur(12px);font-size:11px;line-height:1.5}
+      .tip[hidden]{display:none}
+      .tip>span{display:grid;width:30px;height:30px;place-items:center;border-radius:8px;color:var(--ink);background:var(--acid);font-size:15px;font-weight:1000}
+      .tip strong{display:block;margin-bottom:1px;font-size:10px;letter-spacing:.08em}
+      .tip p{margin:0;color:#c9c5bb}
+      .tip button{min-height:30px;padding:0 9px;border:0;font-size:18px}
+      dialog{width:min(520px,calc(100% - 28px));padding:0;border:1px solid rgba(232,255,76,.45);border-radius:20px;color:var(--paper);background:#14151c;box-shadow:0 30px 90px rgba(0,0,0,.65)}
+      dialog::backdrop{background:rgba(4,5,8,.76);backdrop-filter:blur(6px)}
+      .help{padding:25px}
+      .help-kicker{color:var(--acid);font-size:9px;font-weight:1000;letter-spacing:.18em}
+      .help h2{margin:8px 0 10px;font-size:28px;letter-spacing:-.04em}
+      .help p{margin:0;color:#c9c5bb;line-height:1.7}
+      .help dl{display:grid;grid-template-columns:auto 1fr;gap:9px 14px;margin:22px 0;color:#aaa8a2;font-size:11px}
+      .help dt{color:var(--paper);font-weight:900}
+      .help dd{margin:0}
+      .help-actions{display:flex;justify-content:flex-end}
       @keyframes spin{to{transform:rotate(360deg)}}
       .stage:fullscreen{border:0;border-radius:0}
       @media(max-width:720px){
@@ -36,10 +55,12 @@
         a{width:42px;padding:0;justify-content:center;font-size:0}
         .identity>span,.identity small{display:none}
         .identity strong{font-size:15px}
-        button{width:42px;padding:0;overflow:hidden;font-size:0}
-        #reload::after{content:"↻";font-size:19px}
-        #fullscreen::after{content:"⛶";font-size:19px}
+        .actions button{width:42px;padding:0;overflow:hidden;font-size:0}
+        .actions button::after{content:attr(data-icon);font-size:18px}
         .stage{border-radius:11px}
+        .tip{left:9px;bottom:9px;max-width:calc(100% - 18px)}
+        .tip button{width:30px}
+        .status button{width:auto;font-size:9px}
       }
       @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
@@ -52,26 +73,100 @@
         <div><strong>装甲峡谷</strong><small>ARMOR ALLEY</small></div>
       </div>
       <div class="actions">
-        <button id="reload" type="button">重新载入</button>
-        <button id="fullscreen" type="button">全屏游玩</button>
+        <button id="help" type="button" data-icon="?">操作提示</button>
+        <button id="reload" type="button" data-icon="↻">重新载入</button>
+        <button id="fullscreen" type="button" data-icon="⛶">全屏游玩</button>
       </div>
     </header>
-    <div class="stage" id="stage">
-      <div class="status" id="status" aria-live="polite"><i></i>正在装载</div>
-      <iframe id="game" src="/embedded/armor-alley/index.html" title="装甲峡谷游戏" allow="autoplay; fullscreen; gamepad"></iframe>
+    <div class="stage" id="stage" aria-busy="true">
+      <div class="status" id="status" aria-live="polite">
+        <i></i><span id="status-text">正在装载</span>
+        <button id="retry" type="button" hidden>重试</button>
+      </div>
+      <div class="tip" id="tip" hidden>
+        <span aria-hidden="true">!</span>
+        <div><strong>快速上手</strong><p>驾驶直升机掩护车队，购买单位并逐步推进战线。</p></div>
+        <button id="tip-close" type="button" aria-label="关闭操作提示">×</button>
+      </div>
+      <iframe id="game" data-src="/embedded/armor-alley/index.html" title="装甲峡谷游戏" allow="autoplay; fullscreen; gamepad" loading="eager" fetchpriority="high"></iframe>
     </div>
+    <dialog id="help-dialog">
+      <div class="help">
+        <span class="help-kicker">HOW TO PLAY</span>
+        <h2>装甲峡谷操作提示</h2>
+        <p>驾驶直升机掩护车队，购买单位并逐步推进战线。</p>
+        <dl>
+          <dt>Alt + H</dt><dd>随时打开或关闭本提示</dd>
+          <dt>Alt + R</dt><dd>重新载入当前游戏</dd>
+          <dt>Alt + Enter</dt><dd>进入或退出全屏</dd>
+        </dl>
+        <div class="help-actions"><button id="help-close" type="button">继续游戏</button></div>
+      </div>
+    </dialog>
     <script>
       const frame=document.querySelector("#game");
       const stage=document.querySelector("#stage");
       const status=document.querySelector("#status");
+      const statusText=document.querySelector("#status-text");
+      const retry=document.querySelector("#retry");
+      const tip=document.querySelector("#tip");
+      const helpDialog=document.querySelector("#help-dialog");
+      let slowTimer;
+      const gameUrl=new URL(frame.dataset.src,location.origin);
       const room=new URLSearchParams(location.search).get("room");
-      if(room) frame.src="/embedded/armor-alley/index.html?room="+encodeURIComponent(room);
-      frame.addEventListener("load",()=>status.classList.add("done"),{once:true});
-      document.querySelector("#reload").addEventListener("click",()=>{
-        status.classList.remove("done");
-        frame.contentWindow.location.reload();
+      if(room) gameUrl.searchParams.set("room",room);
+      const beginLoad=()=>{
+        clearTimeout(slowTimer);
+        stage.setAttribute("aria-busy","true");
+        status.classList.remove("done","slow");
+        statusText.textContent="正在装载";
+        retry.hidden=true;
+        slowTimer=setTimeout(()=>{
+          status.classList.add("slow");
+          statusText.textContent="加载时间较长";
+          retry.hidden=false;
+        },10000);
+      };
+      const showHelp=()=>helpDialog.open?helpDialog.close():helpDialog.showModal();
+      const toggleFullscreen=()=>document.fullscreenElement?document.exitFullscreen?.():stage.requestFullscreen?.();
+      const reloadGame=()=>{
+        beginLoad();
+        try{frame.contentWindow.location.reload()}catch{frame.src=frame.src}
+      };
+      const shortcuts=(event)=>{
+        if(!event.altKey)return;
+        if(event.key.toLowerCase()==="h"){event.preventDefault();showHelp()}
+        if(event.key.toLowerCase()==="r"){event.preventDefault();reloadGame()}
+        if(event.key==="Enter"){event.preventDefault();toggleFullscreen()}
+      };
+      beginLoad();
+      frame.addEventListener("load",()=>{
+        clearTimeout(slowTimer);
+        stage.setAttribute("aria-busy","false");
+        status.classList.add("done");
+        frame.focus();
+        try{frame.contentWindow.addEventListener("keydown",shortcuts)}catch{}
+        const seenKey="playroom-tip-seen:armor-alley";
+        if(!localStorage.getItem(seenKey)){
+          tip.hidden=false;
+          localStorage.setItem(seenKey,"1");
+          setTimeout(()=>{tip.hidden=true},8000);
+        }
       });
-      document.querySelector("#fullscreen").addEventListener("click",()=>stage.requestFullscreen?.());
+      frame.src=gameUrl.pathname+gameUrl.search;
+      retry.addEventListener("click",reloadGame);
+      document.querySelector("#reload").addEventListener("click",reloadGame);
+      document.querySelector("#fullscreen").addEventListener("click",toggleFullscreen);
+      document.querySelector("#help").addEventListener("click",showHelp);
+      document.querySelector("#help-close").addEventListener("click",()=>helpDialog.close());
+      document.querySelector("#tip-close").addEventListener("click",()=>{tip.hidden=true});
+      document.addEventListener("keydown",shortcuts);
+      helpDialog.addEventListener("click",(event)=>{
+        if(event.target===helpDialog)helpDialog.close();
+      });
+      if("serviceWorker" in navigator){
+        addEventListener("load",()=>navigator.serviceWorker.register("/game-cache-sw.js").catch(()=>{}),{once:true});
+      }
     </script>
   </body>
 </html>
