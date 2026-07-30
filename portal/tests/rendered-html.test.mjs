@@ -245,7 +245,7 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
   );
   assert.match(gameIndex, /launchParams\.get\("autostart"\) === "1"/);
   assert.match(gameIndex, /track\/RF87t6b6\/drive/);
-  assert.match(gameIndex, /urlArgs: "v=20260730-renderfix17"/);
+  assert.match(gameIndex, /urlArgs: "v=20260730-renderfix18"/);
   assert.match(terrainSource, /url\.startsWith\(basePath \+ '\/'\)/);
   assert.doesNotMatch(
     terrainRenderer,
@@ -264,8 +264,8 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
   assert.match(appSource, /shadows: false/);
   assert.match(appSource, /this\.root\.prefs\.shadows = false/);
   assert.match(clientSource, /parkingBrake = this\.idleSeconds >= 0\.45/);
-  assert.match(driveSource, /this\.rolloverSeconds >= 2\.5/);
-  assert.match(driveSource, /Vehicle recovered/);
+  assert.doesNotMatch(driveSource, /rolloverSeconds/);
+  assert.doesNotMatch(driveSource, /Vehicle recovered/);
 });
 
 test("provides Micro Racing behind the shared portal port", async () => {
