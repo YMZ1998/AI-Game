@@ -87,6 +87,7 @@ define([
 
         const $prefAudio = this.$('#pref-audio');
         const $prefVolume = this.$('#pref-volume');
+        const $prefGrip = this.$('#pref-grip');
         const $prefShadows = this.$('#pref-shadows');
         const $prefTerrainhq = this.$('#pref-terrainhq');
         const $prefAntialias = this.$('#pref-antialias');
@@ -95,6 +96,7 @@ define([
 
         $prefAudio.on('change', () => prefs.audio = $prefAudio[0].checked);
         $prefVolume.on('change', () => prefs.volume = $prefVolume.val());
+        $prefGrip.on('change', () => prefs.grip = $prefGrip.val());
         $prefShadows.on('change', () => prefs.shadows = $prefShadows[0].checked);
         $prefTerrainhq.on('change', () => prefs.terrainhq = $prefTerrainhq[0].checked);
         $prefAntialias.on('change', () => prefs.antialias = $prefAntialias[0].checked);
@@ -102,6 +104,7 @@ define([
         this.listenTo(root, 'change:prefs.', function() {
           $prefAudio[0].checked = prefs.audio;
           $prefVolume.val(prefs.volume);
+          $prefGrip.val(prefs.grip);
           $prefShadows[0].checked = prefs.shadows;
           $prefTerrainhq[0].checked = prefs.terrainhq;
           return $prefAntialias[0].checked = prefs.antialias;

@@ -74,6 +74,7 @@ define([
         'audio',
         'car',
         'challenge',
+        'grip',
         'musicplay',
         'musicvolume',
         'pixeldensity',
@@ -88,6 +89,7 @@ define([
         audio: true,
         car: 'ArbusuG',
         challenge: 'world',  // none, clock, world  # TODO: Add an experiment for this!
+        grip: 'enhanced',
         musicplay: false,
         musicvolume: 0.5,
         pixeldensity: 1,

@@ -63,6 +63,13 @@ table
           li Volume 
             input#pref-volume(type="range", min=0, max=1, step="any", value=prefs.volume)
           hr
+          .label Handling
+          li Tire grip
+            select#pref-grip
+              option(value="standard", selected=prefs.grip === "standard") Standard
+              option(value="enhanced", selected=prefs.grip === "enhanced") Enhanced
+              option(value="racing", selected=prefs.grip === "racing") Racing
+          hr
           .label Graphics options: the game may run faster if you turn these off.
             | They take effect after reloading the page.
           li: label

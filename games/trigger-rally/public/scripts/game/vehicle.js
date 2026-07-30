@@ -192,8 +192,9 @@ function(THREE, psim, collision, util) {
     this.wheelTurnVel = 0;
     this.totalDrive = 0;
 
-    this.wheelFrictionStatic = config.wheelFrictionStatic || FRICTION_STATIC_WHEEL;
-    this.wheelFrictionDynamic = config.wheelFrictionDynamic || FRICTION_DYNAMIC_WHEEL;
+    this.wheelFrictionStaticBase = config.wheelFrictionStatic || FRICTION_STATIC_WHEEL;
+    this.wheelFrictionDynamicBase = config.wheelFrictionDynamic || FRICTION_DYNAMIC_WHEEL;
+    this.setGripMultiplier(this.gripMultiplier || 1);
 
     this.clips = [];
     for (var i = 0; i < config.clips.length; ++i) {
@@ -277,6 +278,12 @@ function(THREE, psim, collision, util) {
       this.wingAngMassInv = new Vec3(guess, guess * 2, guess);
       this.liftForce = 0;
     }
+  };
+
+  exports.Vehicle.prototype.setGripMultiplier = function(multiplier) {
+    this.gripMultiplier = Math.max(0.5, Math.min(2, Number(multiplier) || 1));
+    this.wheelFrictionStatic = this.wheelFrictionStaticBase * this.gripMultiplier;
+    this.wheelFrictionDynamic = this.wheelFrictionDynamicBase * this.gripMultiplier;
   };
 
   exports.Vehicle.prototype.recordState = function() {

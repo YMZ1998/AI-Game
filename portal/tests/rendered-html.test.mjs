@@ -238,6 +238,27 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
     ),
     "utf8",
   );
+  const vehicleSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/game/vehicle.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const statusbarTemplate = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/templates/statusbar.jade",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const statusbarSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/views/statusbar.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   assert.match(
     shell,
@@ -245,7 +266,7 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
   );
   assert.match(gameIndex, /launchParams\.get\("autostart"\) === "1"/);
   assert.match(gameIndex, /track\/RF87t6b6\/drive/);
-  assert.match(gameIndex, /urlArgs: "v=20260730-renderfix18"/);
+  assert.match(gameIndex, /urlArgs: "v=20260730-grip20"/);
   assert.match(terrainSource, /url\.startsWith\(basePath \+ '\/'\)/);
   assert.doesNotMatch(
     terrainRenderer,
@@ -266,6 +287,13 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
   assert.match(clientSource, /parkingBrake = this\.idleSeconds >= 0\.45/);
   assert.doesNotMatch(driveSource, /rolloverSeconds/);
   assert.doesNotMatch(driveSource, /Vehicle recovered/);
+  assert.match(vehicleSource, /setGripMultiplier = function\(multiplier\)/);
+  assert.match(driveSource, /enhanced: 1\.28/);
+  assert.match(driveSource, /racing: 1\.5/);
+  assert.match(driveSource, /change:prefs\.grip/);
+  assert.match(appSource, /grip: 'enhanced'/);
+  assert.match(statusbarTemplate, /select#pref-grip/);
+  assert.match(statusbarSource, /prefs\.grip = \$prefGrip\.val\(\)/);
 });
 
 test("provides Micro Racing behind the shared portal port", async () => {

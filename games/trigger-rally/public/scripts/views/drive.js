@@ -41,6 +41,11 @@ define([
   let Drive;
   const { KEYCODE } = util;
   const Vec3 = THREE.Vector3;
+  const GRIP_MULTIPLIERS = {
+    standard: 1,
+    enhanced: 1.28,
+    racing: 1.5
+  };
 
   const padZero = (val, digits) => (1e15 + val + '').slice(-digits);
 
@@ -225,6 +230,7 @@ define([
 
               return this.game.addCarConfig(carModel.config, progress => {
                 this.progress = progress;
+                this.applyGripPreference();
                 progress.on('advance', () => this.advance());
 
                 const obj1 = progress.vehicle.controller.input;
@@ -246,7 +252,14 @@ define([
         // Also recreate game if user or car changes.
         this.listenTo(root, 'change:user', createGame);
         this.listenTo(root, 'change:user.products', createGame);
+        this.listenTo(root, 'change:prefs.grip', () => this.applyGripPreference());
         return this.listenTo(root, 'change:prefs.car', createGame);
+      }
+
+      applyGripPreference() {
+        if (!this.progress || !this.progress.vehicle) { return; }
+        const multiplier = GRIP_MULTIPLIERS[this.app.root.prefs.grip] || GRIP_MULTIPLIERS.enhanced;
+        return this.progress.vehicle.setGripMultiplier(multiplier);
       }
 
       updateSplit() {
