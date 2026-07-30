@@ -4,6 +4,10 @@ import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 import { doudizhuLanServer } from "./lan/doudizhu-server";
 import { anonymousChatServer } from "./lan/anonymous-chat-server";
+import {
+  TOSIOS_INTERNAL_PORT,
+  tosiosLanServer,
+} from "./lan/tosios-server";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -51,6 +55,14 @@ export default defineConfig(async () => {
 
   return {
     server: {
+      proxy: {
+        "/tosios": {
+          target: `http://127.0.0.1:${TOSIOS_INTERNAL_PORT}`,
+          changeOrigin: true,
+          ws: true,
+          rewrite: (requestPath) => requestPath.replace(/^\/tosios/, ""),
+        },
+      },
       watch: isCodexSeatbeltSandbox
         ? {
             useFsEvents: false,
@@ -62,6 +74,7 @@ export default defineConfig(async () => {
     plugins: [
       doudizhuLanServer(),
       anonymousChatServer(),
+      tosiosLanServer(),
       vinext(),
       sites(),
       cloudflare({

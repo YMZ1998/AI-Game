@@ -51,6 +51,34 @@ const gameCatalog = [
     title: "匿名夜话",
     english: "MIDNIGHT FREQUENCY",
   },
+  { slug: "pacman", number: "08", title: "吃豆人", english: "PAC-MAN" },
+  {
+    slug: "connect-four",
+    number: "09",
+    title: "四子棋",
+    english: "CONNECT FOUR",
+  },
+  { slug: "2048", number: "10", title: "2048", english: "NUMBER MERGE" },
+  {
+    slug: "asteroids",
+    number: "11",
+    title: "小行星",
+    english: "ASTEROIDS",
+  },
+  { slug: "hexgl", number: "12", title: "极速光轨", english: "HEXGL" },
+  { slug: "hextris", number: "13", title: "六角拼图", english: "HEXTRIS" },
+  {
+    slug: "tosios",
+    number: "14",
+    title: "地牢枪手",
+    english: "TOSIOS",
+  },
+  {
+    slug: "armor-alley",
+    number: "15",
+    title: "装甲峡谷",
+    english: "ARMOR ALLEY",
+  },
 ];
 
 async function exists(target) {
@@ -80,13 +108,19 @@ async function listFiles(root, current = root) {
 
 function rewriteResourcePaths(source, slug, clientFiles) {
   const prefix = `/embedded/${slug}`;
-  let result = source
-    .replace(/https?:\/\/localhost:\d+/g, "")
-    .replaceAll("/assets/", `${prefix}/assets/`);
+  let result = source.replace(/https?:\/\/localhost:\d+/g, "");
+  result = result.replace(
+    /(^|["'=(\s])\/assets\//g,
+    `$1${prefix}/assets/`,
+  );
 
   for (const file of clientFiles.sort((a, b) => b.length - a.length)) {
     if (file.startsWith("assets/")) continue;
-    result = result.replaceAll(`/${file}`, `${prefix}/${file}`);
+    const escaped = file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    result = result.replace(
+      new RegExp(`(^|["'=(\\s])/${escaped}`, "g"),
+      `$1${prefix}/${file}`,
+    );
   }
 
   return result;
@@ -214,6 +248,46 @@ for (const game of gameCatalog) {
   const shellDestination = path.join(shellRoot, slug);
   const existingIndex = path.join(destination, "index.html");
   const shellIndex = path.join(shellDestination, "index.html");
+  const manifestPath = path.join(gameRoot, "playroom.json");
+
+  if (await exists(manifestPath)) {
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    if (manifest.type !== "static") {
+      throw new Error(`${slug} has unsupported playroom type: ${manifest.type}`);
+    }
+
+    const sourceRoot = path.join(gameRoot, manifest.source ?? "public");
+    const entry = manifest.entry ?? "index.html";
+    if (!(await exists(path.join(sourceRoot, entry)))) {
+      throw new Error(`${slug} static entry is missing: ${entry}`);
+    }
+
+    console.log(`[games] ${slug}: copying static source`);
+    const clientFiles = await listFiles(sourceRoot);
+    await rm(destination, { recursive: true, force: true });
+    await mkdir(destination, { recursive: true });
+    await cp(sourceRoot, destination, { recursive: true, force: true });
+    await patchCopiedTextAssets(destination, slug, clientFiles);
+
+    if (entry !== "index.html") {
+      await cp(path.join(destination, entry), existingIndex, { force: true });
+    }
+    const sourceHtml = await readFile(existingIndex, "utf8");
+    const html = sourceHtml.includes('name="playroom-embedded"')
+      ? sourceHtml
+      : sourceHtml.replace(
+          /<head(\s[^>]*)?>/i,
+          (head) =>
+            `${head}<meta name="playroom-embedded" content="${slug}">`,
+        );
+    await writeFile(existingIndex, html);
+
+    await rm(shellDestination, { recursive: true, force: true });
+    await mkdir(shellDestination, { recursive: true });
+    await writeFile(shellIndex, renderGameShell(game));
+    console.log(`[games] ${slug}: embedded static source`);
+    continue;
+  }
 
   if (!(await exists(path.join(gameRoot, "package.json")))) {
     if ((await exists(existingIndex)) && (await exists(shellIndex))) {

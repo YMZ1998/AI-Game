@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="t d">
+  <title id="t">2048 游戏封面</title><desc id="d">暖色数字方块在棋盘上合并。</desc>
+  <rect width="1600" height="900" fill="#faf8ef"/><rect x="810" y="-120" width="700" height="700" rx="80" fill="#edc53f" transform="rotate(18 1160 230)" opacity=".22"/>
+  <g transform="translate(170 110)"><text x="0" y="170" fill="#776e65" font-family="Arial,sans-serif" font-size="190" font-weight="900">2048</text><text x="10" y="235" fill="#9b8f84" font-family="Arial,sans-serif" font-size="26" font-weight="800" letter-spacing="11">JOIN THE NUMBERS</text></g>
+  <g transform="translate(700 125) rotate(-4 340 340)"><rect width="680" height="680" rx="30" fill="#bbada0"/>
+    <g font-family="Arial,sans-serif" font-weight="900" text-anchor="middle">
+      <g fill="#eee4da"><rect x="28" y="28" width="140" height="140" rx="12"/><rect x="188" y="28" width="140" height="140" rx="12"/><rect x="348" y="28" width="140" height="140" rx="12"/><rect x="508" y="28" width="140" height="140" rx="12"/></g>
+      <rect x="28" y="188" width="140" height="140" rx="12" fill="#eee4da"/><text x="98" y="280" font-size="62" fill="#776e65">2</text>
+      <rect x="188" y="188" width="140" height="140" rx="12" fill="#ede0c8"/><text x="258" y="280" font-size="62" fill="#776e65">4</text>
+      <rect x="348" y="188" width="140" height="140" rx="12" fill="#f2b179"/><text x="418" y="280" font-size="58" fill="#fff">8</text>
+      <rect x="508" y="188" width="140" height="140" rx="12" fill="#f59563"/><text x="578" y="280" font-size="52" fill="#fff">16</text>
+      <rect x="28" y="348" width="140" height="140" rx="12" fill="#f67c5f"/><text x="98" y="440" font-size="52" fill="#fff">32</text>
+      <rect x="188" y="348" width="140" height="140" rx="12" fill="#f65e3b"/><text x="258" y="440" font-size="52" fill="#fff">64</text>
+      <rect x="348" y="348" width="140" height="140" rx="12" fill="#edcf72"/><text x="418" y="440" font-size="45" fill="#fff">128</text>
+      <rect x="508" y="348" width="140" height="140" rx="12" fill="#edcc61"/><text x="578" y="440" font-size="45" fill="#fff">256</text>
+      <rect x="188" y="508" width="140" height="140" rx="12" fill="#edc850"/><text x="258" y="600" font-size="45" fill="#fff">512</text>
+      <rect x="348" y="508" width="300" height="140" rx="12" fill="#edc53f"/><text x="498" y="604" font-size="65" fill="#fff">2048</text>
+    </g>
+  </g>
+</svg>

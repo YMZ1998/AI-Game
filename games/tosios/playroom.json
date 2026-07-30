@@ -1,0 +1,6 @@
+{
+  "type": "static",
+  "source": "public",
+  "entry": "index.html",
+  "upstream": "https://github.com/hathora/TOSIOS-hathora"
+}

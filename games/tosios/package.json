@@ -1,0 +1,8 @@
+{
+  "name": "playroom-tosios",
+  "private": true,
+  "scripts": {
+    "design:lint": "npx --yes @google/design.md@0.4.0 lint DESIGN.md",
+    "server": "node server/tosios-server.cjs"
+  }
+}

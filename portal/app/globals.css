@@ -379,6 +379,53 @@ nav a:hover::after {
   background: #0b0b1a;
 }
 
+.pacman-game {
+  color: #fff7a8;
+  background: #101a62;
+}
+
+.connect-four-game {
+  color: #fff;
+  background: #174ea6;
+}
+
+.number-game {
+  color: #4f463e;
+  background: #d8c8b7;
+}
+
+.asteroids-game {
+  color: #fff;
+  background: #090b12;
+}
+
+.hexgl-game {
+  grid-column: 1 / -1;
+  color: #d9fbff;
+  background: #031522;
+}
+
+.hextris-game {
+  color: #fff;
+  background: #2b3443;
+}
+
+.tosios-game {
+  color: #fff6d3;
+  background: #3a194f;
+}
+
+.armor-game {
+  grid-column: 1 / -1;
+  color: #f6e7be;
+  background: #3a3022;
+}
+
+.hexgl-game .ticket-image,
+.armor-game .ticket-image {
+  height: clamp(320px, 38vw, 540px);
+}
+
 .ticket-image {
   position: relative;
   height: clamp(280px, 34vw, 510px);
@@ -569,6 +616,73 @@ nav a:hover::after {
   background: #ff8066;
 }
 
+.pacman-game .ticket-copy,
+.pacman-game .ticket-copy p,
+.connect-four-game .ticket-copy,
+.connect-four-game .ticket-copy p,
+.asteroids-game .ticket-copy,
+.asteroids-game .ticket-copy p,
+.hexgl-game .ticket-copy,
+.hexgl-game .ticket-copy p,
+.hextris-game .ticket-copy,
+.hextris-game .ticket-copy p,
+.tosios-game .ticket-copy,
+.tosios-game .ticket-copy p,
+.armor-game .ticket-copy,
+.armor-game .ticket-copy p {
+  color: inherit;
+}
+
+.pacman-game .ticket-copy p,
+.connect-four-game .ticket-copy p,
+.asteroids-game .ticket-copy p,
+.hexgl-game .ticket-copy p,
+.hextris-game .ticket-copy p,
+.tosios-game .ticket-copy p,
+.armor-game .ticket-copy p {
+  opacity: 0.68;
+}
+
+.pacman-game .play-button i {
+  color: #101a62;
+  background: #ffe347;
+}
+
+.connect-four-game .play-button i {
+  color: #174ea6;
+  background: #ffd23f;
+}
+
+.number-game .play-button i {
+  color: #fff;
+  background: #8f7a66;
+}
+
+.asteroids-game .play-button i {
+  color: #090b12;
+  background: #fff;
+}
+
+.hexgl-game .play-button i {
+  color: #031522;
+  background: #00efff;
+}
+
+.hextris-game .play-button i {
+  color: #2b3443;
+  background: #f1c40f;
+}
+
+.tosios-game .play-button i {
+  color: #3a194f;
+  background: #ffcf57;
+}
+
+.armor-game .play-button i {
+  color: #251d13;
+  background: #e8bb62;
+}
+
 .game-ticket:hover .play-button i {
   transform: rotate(45deg);
 }
@@ -735,6 +849,11 @@ a:focus-visible {
     grid-column: auto;
   }
 
+  .hexgl-game,
+  .armor-game {
+    grid-column: auto;
+  }
+
   .ticket-image {
     height: clamp(300px, 60vw, 520px);
   }
@@ -838,6 +957,11 @@ a:focus-visible {
   }
 
   .chat-game .ticket-image {
+    height: 280px;
+  }
+
+  .hexgl-game .ticket-image,
+  .armor-game .ticket-image {
     height: 280px;
   }
 

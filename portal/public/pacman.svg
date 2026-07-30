@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="t d">
+  <title id="t">吃豆人游戏封面</title><desc id="d">蓝色霓虹迷宫中，黄色吃豆人追逐豆子并躲避幽灵。</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#06051a"/><stop offset="1" stop-color="#141b70"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <g fill="none" stroke="#345cff" stroke-width="18" filter="url(#glow)" opacity=".9">
+    <path d="M70 90h520v180H330v150H90v390h420V610H290v-90h430V90h360v180h430v280h-270v260H890V620h170V440H810V270"/>
+    <path d="M70 360h150M600 360h120M1080 360h430M600 810h190"/>
+  </g>
+  <g fill="#fff8b8"><circle cx="430" cy="465" r="9"/><circle cx="510" cy="465" r="9"/><circle cx="590" cy="465" r="9"/><circle cx="670" cy="465" r="9"/><circle cx="750" cy="465" r="9"/><circle cx="830" cy="465" r="9"/></g>
+  <path d="M365 465a105 105 0 1 1-31-74l-74 74 74 74a104 104 0 0 1 31-74Z" fill="#ffe534" filter="url(#glow)"/>
+  <g transform="translate(930 350)" filter="url(#glow)"><path d="M0 105a105 105 0 0 1 210 0v120l-35-25-35 25-35-25-35 25-35-25-35 25Z" fill="#ff4f6d"/><circle cx="70" cy="105" r="28" fill="#fff"/><circle cx="142" cy="105" r="28" fill="#fff"/><circle cx="80" cy="112" r="12" fill="#153c9b"/><circle cx="152" cy="112" r="12" fill="#153c9b"/></g>
+  <text x="92" y="765" fill="#fff" font-family="Arial,sans-serif" font-size="38" font-weight="900" letter-spacing="12">MAZE / 12 STAGES</text>
+</svg>

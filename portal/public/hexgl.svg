@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="t d">
+  <title id="t">极速光轨游戏封面</title><desc id="d">青色霓虹赛道通向未来城市。</desc>
+  <defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#071b36"/><stop offset=".58" stop-color="#020915"/><stop offset="1"/></linearGradient><linearGradient id="r" x2="1"><stop stop-color="#00eaff"/><stop offset=".5" stop-color="#7b4dff"/><stop offset="1" stop-color="#ff2f89"/></linearGradient><filter id="g"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect width="1600" height="900" fill="url(#b)"/><circle cx="800" cy="280" r="250" fill="#3968ff" opacity=".12"/>
+  <g fill="#08172a"><path d="M0 510V250h90v260h80V130h130v380h80V300h110v210h120V90h120v420h90V210h140v300h100V130h100v380h130V270h130v240Z"/></g>
+  <path d="M560 900 725 430h150l165 470Z" fill="#071426"/><path d="m625 900 125-470M975 900 850 430" stroke="#00eaff" stroke-width="10" filter="url(#g)"/><path d="M730 785h140M750 690h100M770 610h60M785 540h30" stroke="#735cff" stroke-width="6"/>
+  <g transform="translate(800 650)" filter="url(#g)"><path d="m-150 70 58-116 92-54 92 54 58 116-63 48H-87Z" fill="url(#r)"/><path d="m-72-23 72-44 72 44-24 55h-96Z" fill="#d9fdff"/><path d="m-105 72 43-7 22 38h-75ZM105 72l-43-7-22 38h75Z" fill="#00efff"/></g>
+  <text x="84" y="118" fill="#c9fbff" font-family="Arial,sans-serif" font-size="40" font-weight="900" letter-spacing="14">ANTI-GRAVITY / CITYSCAPE</text>
+</svg>

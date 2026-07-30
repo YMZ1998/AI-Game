@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="t d">
+  <title id="t">地牢枪手游戏封面</title><desc id="d">像素风地牢中的四名冒险者与怪物交战。</desc>
+  <rect width="1600" height="900" fill="#20112c"/><path d="M0 570 800 210l800 360v330H0Z" fill="#351a48"/><g stroke="#4f2864" stroke-width="4"><path d="M0 570h1600M0 680h1600M0 790h1600"/><path d="M200 480v420M500 345v555M800 210v690M1100 345v555M1400 480v420"/></g>
+  <g transform="translate(800 470)"><rect x="-88" y="-96" width="176" height="176" rx="18" fill="#ffcc57"/><rect x="-60" y="-58" width="38" height="38" fill="#31183f"/><rect x="22" y="-58" width="38" height="38" fill="#31183f"/><rect x="-38" y="20" width="76" height="20" fill="#b34b5d"/><path d="M88-20h200v30H88Z" fill="#a9e8ff"/><path d="m288-20 60 15-60 15Z" fill="#fff"/></g>
+  <g fill="#61d6a6"><path d="m280 610 80-75 100 20 45 80-55 90-105 5-70-70Z"/><circle cx="345" cy="620" r="18" fill="#151321"/><circle cx="425" cy="620" r="18" fill="#151321"/></g>
+  <g fill="#ee5b7d"><path d="m1190 530 75-65 110 25 35 90-65 75-110-10-55-65Z"/><circle cx="1260" cy="545" r="17" fill="#151321"/><circle cx="1340" cy="555" r="17" fill="#151321"/></g>
+  <g fill="#ffcf57" font-family="monospace" font-size="34" font-weight="900"><text x="72" y="105">LOCAL ROOM: OPEN</text><text x="1250" y="105">4 PLAYERS</text></g>
+</svg>

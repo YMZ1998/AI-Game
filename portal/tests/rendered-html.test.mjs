@@ -23,7 +23,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders all seven game tickets", async () => {
+test("server-renders all fifteen game tickets", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -37,9 +37,18 @@ test("server-renders all seven game tickets", async () => {
   assert.match(html, /临界行动/);
   assert.match(html, /AI 俄罗斯方块/);
   assert.match(html, /匿名夜话/);
-  assert.match(html, /7 款游戏在线/);
+  assert.match(html, /吃豆人/);
+  assert.match(html, /四子棋/);
+  assert.match(html, /2048/);
+  assert.match(html, /小行星/);
+  assert.match(html, /极速光轨/);
+  assert.match(html, /六角拼图/);
+  assert.match(html, /地牢枪手/);
+  assert.match(html, /装甲峡谷/);
+  assert.match(html, /15(?:<!-- -->)? 款游戏在线/);
   assert.match(html, /href="\/play\/police-chase\/index\.html"/);
   assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
+  assert.match(html, /href="\/play\/armor-alley\/index\.html"/);
 });
 
 test("includes accessible game links and metadata", async () => {
@@ -54,6 +63,7 @@ test("includes accessible game links and metadata", async () => {
   assert.match(html, /aria-label="开始玩匿名夜话"/);
   assert.match(html, /href="\/play\/tetris-game\/index\.html"/);
   assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
+  assert.match(html, /href="\/play\/tosios\/index\.html"/);
   assert.doesNotMatch(html, /localhost:300(?:0|1|2|5|6)/);
 });
 
@@ -80,6 +90,14 @@ test("ships every game as a same-origin embedded build", async () => {
     "critical-operation",
     "tetris-game",
     "anonymous-chat",
+    "pacman",
+    "connect-four",
+    "2048",
+    "asteroids",
+    "hexgl",
+    "hextris",
+    "tosios",
+    "armor-alley",
   ];
 
   for (const slug of slugs) {
@@ -89,10 +107,31 @@ test("ships every game as a same-origin embedded build", async () => {
     );
     const html = await readFile(indexUrl, "utf8");
 
-    assert.match(html, new RegExp(`/embedded/${slug}/assets/`));
-    assert.doesNotMatch(html, /localhost:\d+/);
+    assert.match(html, new RegExp(`playroom-embedded[^>]+${slug}`));
+    assert.doesNotMatch(
+      html,
+      /(?:src|href)=["']https?:\/\/localhost:\d+/,
+    );
     assert.doesNotMatch(html, new RegExp(`/embedded/${slug}/embedded/`));
+    assert.doesNotMatch(html, new RegExp(`\\./embedded/${slug}/`));
   }
+});
+
+test("provides a local TOSIOS room process behind the portal proxy", async () => {
+  const serverSource = await readFile(
+    new URL("../lan/tosios-server.ts", import.meta.url),
+    "utf8",
+  );
+  const viteSource = await readFile(
+    new URL("../vite.config.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serverSource, /tosios-server\.cjs/);
+  assert.match(serverSource, /TOSIOS_INTERNAL_PORT/);
+  assert.match(viteSource, /tosiosLanServer/);
+  assert.match(viteSource, /"\/tosios"/);
+  assert.match(viteSource, /ws: true/);
 });
 
 test("provides an in-memory anonymous LAN chat server", async () => {
