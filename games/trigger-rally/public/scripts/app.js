@@ -91,7 +91,7 @@ define([
         musicplay: false,
         musicvolume: 0.5,
         pixeldensity: 1,
-        shadows: true,
+        shadows: false,
         terrainhq: true,
         volume: 0.8
       };
@@ -154,6 +154,9 @@ define([
 
       this.root.prefs.fetch();  // Assume sync because it's localStorage.
       this.root.prefs.on('change', () => this.root.prefs.save());
+      if (this.root.prefs.shadows) {
+        this.root.prefs.shadows = false;
+      }
 
       this.unifiedView = (new UnifiedView(this)).render();
 

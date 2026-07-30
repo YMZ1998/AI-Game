@@ -101,6 +101,7 @@ define([
         this.app = app;
         this.client = client;
         this.replayRun = null;
+        this.rolloverSeconds = 0;
         return this.replayGame = null;
       }
 
@@ -280,6 +281,7 @@ define([
         this.game.replayRunStep = 0
         
         this.updateTimer = true;
+        this.rolloverSeconds = 0;
         this.$runTimer.addClass('running');
         this.$('.racecomplete').addClass('hidden');
         this.splitTimes = [];
@@ -503,6 +505,19 @@ define([
 
       update(delta) {
         if (!this.game) { return; }
+        if (this.progress && this.progress.vehicle) {
+          const { ori } = this.progress.vehicle.body;
+          const upZ = 1 - (2 * ((ori.x * ori.x) + (ori.y * ori.y)));
+          this.rolloverSeconds = upZ < 0.25 ? this.rolloverSeconds + delta : 0;
+
+          if (this.rolloverSeconds >= 2.5) {
+            this.restartGame();
+            this.$countdown.text('Vehicle recovered');
+            this.$countdown.removeClass('fadeout');
+            _.defer(() => this.$countdown.addClass('fadeout'));
+            return;
+          }
+        }
         if (this.updateTimer) {
           const raceTime = this.game.interpolatedRaceTime();
           

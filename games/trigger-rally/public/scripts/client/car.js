@@ -48,7 +48,13 @@ function(THREE, util) {
       this.loadPartsJSON(this.config.meshes, callback);
     };
 
-    let BASE_PATH = window.BASE_PATH
+    const BASE_PATH = window.BASE_PATH.replace(/\/$/, '')
+    const resolveAssetUrl = url => {
+      if (url === BASE_PATH || url.startsWith(BASE_PATH + '/')) {
+        return url
+      }
+      return BASE_PATH + (url[0] === '/' ? url : '/' + url)
+    }
 
     this.loadPartsJSON = function(meshes, callback) {
       var loader = new THREE.LegacyJSONLoader(); // geometries must be converted to buffer geometries
@@ -56,16 +62,16 @@ function(THREE, util) {
       async.parallel({
         body: function(cb) {
           if (meshes.body) {
-            loader.load(BASE_PATH + meshes.body, function() { cb(null, arguments); });
+            loader.load(resolveAssetUrl(meshes.body), function() { cb(null, arguments); });
           } else if (meshes.scene) {
-            sceneLoader.load(meshes.scene, function() { cb(null, arguments); });
+            sceneLoader.load(resolveAssetUrl(meshes.scene), function() { cb(null, arguments); });
           } else {
             throw new Error("Invalid car config");
           }
         },
         wheel: function(cb) {
           if (meshes.wheel) {
-            loader.load(BASE_PATH + meshes.wheel, function() { cb(null, arguments); });
+            loader.load(resolveAssetUrl(meshes.wheel), function() { cb(null, arguments); });
           } else {
             cb(null, null);
           }

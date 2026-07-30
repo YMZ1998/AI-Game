@@ -149,9 +149,30 @@ define([
         }
       }
 
-      track(trackId) {
-        localDB.getTrack(trackId, (response) => {
+      loadTrack(trackId, callback) {
+        localDB.getTrack(trackId, response => {
+          if (!response) {
+            Backbone.trigger('app:notfound');
+            return;
+          }
+
           const track = new models.Track(response, { parse: true });
+          const finish = () => callback(track);
+          if (track.env && track.env.terrain) {
+            finish();
+          } else if (track.env && typeof track.env.fetch === 'function') {
+            track.env.fetch({
+              success: finish,
+              error: () => Backbone.trigger('app:notfound')
+            });
+          } else {
+            Backbone.trigger('app:notfound');
+          }
+        });
+      }
+
+      track(trackId) {
+        this.loadTrack(trackId, track => {
           const view = new TrackView(track, this.app, this.uni.client);
           //track.trigger('change:env');
           //if (track.env !== (lastTrack != null ? lastTrack.env : undefined)) {
@@ -165,15 +186,12 @@ define([
 
       trackDrive(trackId, runId) {
 
-        localDB.getTrack(trackId, (response) => {
-          const track = new models.Track(response, { parse: true });
+        this.loadTrack(trackId, track => {
+          Backbone.trigger('app:settrack', track);
+
           const view = new DriveView(this.app, this.uni.client);
           this.uni.setViewBoth(view);
           view.render();
-          
-          if (this.app.root.track.id != track.id) {
-            Backbone.trigger('app:settrack', track);
-          }
 
           if (runId) {
             view.setRunId(trackId, runId);
@@ -184,19 +202,16 @@ define([
       }
 
       trackEdit(trackId) {
-        localDB.getTrack(trackId, (response) => {
+        this.loadTrack(trackId, track => {
           //if (!(this.uni.getView3D() instanceof EditorView) ||
           //     (this.uni.getView3D() !== this.uni.getViewChild())) {
           //
           //}
-          const track = new models.Track(response, { parse: true });
+          Backbone.trigger('app:settrack', track);
+
           const view = new EditorView(this.app, this.uni.client);
           this.uni.setViewBoth(view);
           view.render();
-
-          if (this.app.root.track.id != track.id) {
-            Backbone.trigger('app:settrack', track);
-          }
         })
       }
 

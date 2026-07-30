@@ -144,7 +144,6 @@ define([
           ),
 
           vertexShader:
-            '#extension GL_OES_standard_derivatives : enable\n' +
             THREE.ShaderChunk.shadowmap_pars_vertex + '\n' +
             `\
 
@@ -319,8 +318,12 @@ void main() {
     float height = worldPosition.z;
     float depth = length(eyePosition.xyz);
     vec2 diffUv = worldPosition.xy / 4.0;
-    vec3 diffDirtSample = texture2D(tDiffuseDirt, diffUv).rgb;
-    vec3 diffRockSample = texture2D(tDiffuseRock, diffUv / 8.0).rgb;
+    vec3 diffDirtSample = max(
+        texture2D(tDiffuseDirt, diffUv).rgb,
+        vec3(0.24, 0.16, 0.08));
+    vec3 diffRockSample = max(
+        texture2D(tDiffuseRock, diffUv / 8.0).rgb,
+        vec3(0.25, 0.27, 0.28));
     vec2 surfaceUv = worldToMapSpace(worldPosition.xy, tSurfaceSize, tSurfaceScale.xy);
     vec4 surfaceSample = texture2D(tSurface, surfaceUv - 0.5 / tSurfaceSize);
 
@@ -372,6 +375,7 @@ void main() {
     gl_FragColor.rgb = veggieColor;
     gl_FragColor.rgb = mix(gl_FragColor.rgb, diffRockSample, rockMix);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, diffDirtSample, trackMix);
+    vec3 terrainAlbedo = gl_FragColor.rgb;
 
     vec3 specular = vec3(0.0);
     specular = mix(specular, vec3(0.20, 0.21, 0.22), rockMix);
@@ -453,6 +457,7 @@ void main() {
     vec3 totalIllum = ambientLightColor + directIllum * shadowColor;
     gl_FragColor.rgb = gl_FragColor.rgb * totalIllum + specularIllum * shadowColor;
     #endif
+    gl_FragColor.rgb = max(gl_FragColor.rgb, terrainAlbedo * 0.55);
 
     float fogFactor = exp2( - fogDensity * fogDensity * depth * depth * logOf2 );
     fogFactor = clamp( 1.0 - fogFactor, 0.0, 1.0 );

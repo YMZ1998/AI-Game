@@ -2,7 +2,8 @@
 
 define(['models/index'], function (models) {
 
-    var localDB = undefined    
+    var localDB = undefined
+    const readyCallbacks = []
 
     const request = indexedDB.open("TriggerRally", 2);
     request.onsuccess = event => {
@@ -11,6 +12,10 @@ define(['models/index'], function (models) {
         window.__localDB__ = localDB
 
         _storeInitialTracks()
+        readyCallbacks.splice(0).forEach(callback => callback())
+    }
+    request.onerror = event => {
+        console.error("Unable to open Trigger Rally database", event.target.error)
     }
     
     request.onupgradeneeded = event => {
@@ -45,12 +50,35 @@ define(['models/index'], function (models) {
         return tracksStore
     }
 
-    function getTrack(trackId, callback) {
-        if (!localDB){ return }
-        const req = getStore("tracks", "readonly").get(trackId)
-        req.onsuccess = () => {
-            callback(req.result)
+    function whenReady(callback) {
+        if (localDB) {
+            callback()
+        } else {
+            readyCallbacks.push(callback)
         }
+    }
+
+    function getTrack(trackId, callback) {
+        whenReady(() => {
+            const req = getStore("tracks", "readonly").get(trackId)
+            req.onsuccess = () => {
+                if (req.result) {
+                    callback(req.result)
+                    return
+                }
+
+                const track = models.Track.findOrCreate(trackId)
+                track.fetch({
+                    success: () => {
+                        const trackData = track.toJSON()
+                        getStore("tracks", "readwrite").put(trackData)
+                        callback(trackData)
+                    },
+                    error: () => callback(null)
+                })
+            }
+            req.onerror = () => callback(null)
+        })
     }
 
     function storeTrack(track, userId){

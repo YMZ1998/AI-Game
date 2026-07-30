@@ -473,6 +473,7 @@ define([
       this.client = client;
       this.controllers = [];
       this.gamepadMap = {};
+      this.idleSeconds = 1;
       this.controllers.push(new KeyboardController(vehic, client));
     }
 
@@ -498,6 +499,17 @@ define([
           controls[key] += controller.controls[key];
         }
       }
+
+      const hasDriveInput = controls.throttle || controls.brake || controls.turn || controls.handbrake;
+      const { linVel } = this.vehic.body;
+      const speedSq = (linVel.x * linVel.x) + (linVel.y * linVel.y) + (linVel.z * linVel.z);
+      if (hasDriveInput || speedSq > 2.25) {
+        this.idleSeconds = 0;
+      } else {
+        this.idleSeconds += delta;
+      }
+      const parkingBrake = this.idleSeconds >= 0.45 ? 1 : 0;
+      controls.handbrake = Math.max(controls.handbrake, parkingBrake);
     }
   }
 

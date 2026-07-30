@@ -182,6 +182,62 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
     new URL("../public/embedded/trigger-rally/index.html", import.meta.url),
     "utf8",
   );
+  const terrainSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/game/terrain.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const terrainRenderer = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/client/terrain.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const carRenderer = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/client/car.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const routerSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/router.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const localDatabase = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/util/localDB.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const appSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/app.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const clientSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/client/client.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const driveSource = await readFile(
+    new URL(
+      "../public/embedded/trigger-rally/scripts/views/drive.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   assert.match(
     shell,
@@ -189,6 +245,27 @@ test("launches Trigger Rally directly into its playable rally stage", async () =
   );
   assert.match(gameIndex, /launchParams\.get\("autostart"\) === "1"/);
   assert.match(gameIndex, /track\/RF87t6b6\/drive/);
+  assert.match(gameIndex, /urlArgs: "v=20260730-renderfix17"/);
+  assert.match(terrainSource, /url\.startsWith\(basePath \+ '\/'\)/);
+  assert.doesNotMatch(
+    terrainRenderer,
+    /GL_OES_standard_derivatives/,
+  );
+  assert.match(
+    terrainRenderer,
+    /max\(gl_FragColor\.rgb, terrainAlbedo \* 0\.55\)/,
+  );
+  assert.match(terrainRenderer, /vec3\(0\.24, 0\.16, 0\.08\)/);
+  assert.match(carRenderer, /resolveAssetUrl\(meshes\.body\)/);
+  assert.match(carRenderer, /resolveAssetUrl\(meshes\.wheel\)/);
+  assert.match(routerSource, /track\.env\.fetch/);
+  assert.match(routerSource, /Backbone\.trigger\('app:settrack', track\)/);
+  assert.match(localDatabase, /readyCallbacks\.push\(callback\)/);
+  assert.match(appSource, /shadows: false/);
+  assert.match(appSource, /this\.root\.prefs\.shadows = false/);
+  assert.match(clientSource, /parkingBrake = this\.idleSeconds >= 0\.45/);
+  assert.match(driveSource, /this\.rolloverSeconds >= 2\.5/);
+  assert.match(driveSource, /Vehicle recovered/);
 });
 
 test("provides Micro Racing behind the shared portal port", async () => {

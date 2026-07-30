@@ -97,10 +97,14 @@ function(THREE, async, uImg, quiver, util) {
 
       if (config[k].url) {
         let url = config[k].url
-        if (url[0] !== '/') {
-          url = '/' + url
+        const basePath = window.BASE_PATH.replace(/\/$/, '')
+        if (url !== basePath && !url.startsWith(basePath + '/')) {
+          if (url[0] !== '/') {
+            url = '/' + url
+          }
+          url = basePath + url
         }
-        maps[k].url = window.BASE_PATH + url;
+        maps[k].url = url;
       }
       maps[k].scale = new Vec3(config[k].scale[0],
                                config[k].scale[1],
