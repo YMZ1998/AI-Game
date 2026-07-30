@@ -9,7 +9,25 @@
   <body>
     <div id="unified-container"></div><img src="images/icon-128.png" style="display:none" title="Trigger Rally icon">
     <script>
-      if (location.pathname.endsWith("/index.html")) {
+      const launchParams = new URLSearchParams(location.search);
+      const autoStart = launchParams.get("autostart") === "1";
+      let initialPath;
+      if (autoStart) {
+        launchParams.delete("autostart");
+        const remainingSearch = launchParams.toString();
+        const basePath = location.pathname.endsWith("/index.html")
+          ? location.pathname.slice(0, -"index.html".length)
+          : location.pathname.replace(/\/?$/, "/");
+        initialPath =
+          basePath +
+          "track/RF87t6b6/drive" +
+          (remainingSearch ? "?" + remainingSearch : "");
+        history.replaceState(
+          null,
+          "",
+          basePath
+        );
+      } else if (location.pathname.endsWith("/index.html")) {
         history.replaceState(
           null,
           "",
@@ -20,6 +38,7 @@
       }
       window.__INITIAL_PATH__ =
         sessionStorage.redirect ||
+        initialPath ||
         (location.pathname + location.search + location.hash);
       delete sessionStorage.redirect;
     </script>

@@ -84,6 +84,7 @@ const gameCatalog = [
     number: "16",
     title: "尘土拉力",
     english: "TRIGGER RALLY",
+    launchQuery: "autostart=1",
   },
   {
     slug: "micro-racing",
@@ -121,7 +122,7 @@ const gameHints = {
   hextris: "左右旋转六角核心，让同色方块连续相接并消除。",
   tosios: "先创建或加入房间，再用键鼠移动、瞄准和射击。",
   "armor-alley": "驾驶直升机掩护车队，购买单位并逐步推进战线。",
-  "trigger-rally": "方向键或 WASD 驾驶，按 R 可快速回到赛道。",
+  "trigger-rally": "方向键或 WASD 驾驶，空格手刹，R 重新开始，C 切换视角。",
   "micro-racing": "创建房间并按需加入电脑车手，再用方向键驾驶。",
   racez: "选择车辆与赛道后，用 WASD 驾驶并依次通过检查点。",
   "javascript-racer": "使用方向键驾驶，提前减速可以更稳定地通过弯道。",
@@ -209,8 +210,9 @@ async function renderGame(gameRoot, slug) {
   return rendered.stdout;
 }
 
-function renderGameShell({ slug, number, title, english }) {
+function renderGameShell({ slug, number, title, english, launchQuery }) {
   const hint = gameHints[slug] ?? "开始游戏后可随时打开操作提示。";
+  const launchSearch = launchQuery ? `?${launchQuery}` : "";
   return `<!doctype html>
 <html lang="zh-CN">
   <head>
@@ -301,7 +303,7 @@ function renderGameShell({ slug, number, title, english }) {
         <div><strong>快速上手</strong><p>${hint}</p></div>
         <button id="tip-close" type="button" aria-label="关闭操作提示">×</button>
       </div>
-      <iframe id="game" data-src="/embedded/${slug}/index.html" title="${title}游戏" allow="autoplay; fullscreen; gamepad" loading="eager" fetchpriority="high"></iframe>
+      <iframe id="game" data-src="/embedded/${slug}/index.html${launchSearch}" title="${title}游戏" allow="autoplay; fullscreen; gamepad" loading="eager" fetchpriority="high"></iframe>
     </div>
     <dialog id="help-dialog">
       <div class="help">

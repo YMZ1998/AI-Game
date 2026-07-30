@@ -173,6 +173,24 @@ test("rewrites Trigger Rally's extensionless API fixture asset paths", async () 
   assert.doesNotMatch(fixture, /"\/a\//);
 });
 
+test("launches Trigger Rally directly into its playable rally stage", async () => {
+  const shell = await readFile(
+    new URL("../public/play/trigger-rally/index.html", import.meta.url),
+    "utf8",
+  );
+  const gameIndex = await readFile(
+    new URL("../public/embedded/trigger-rally/index.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    shell,
+    /data-src="\/embedded\/trigger-rally\/index\.html\?autostart=1"/,
+  );
+  assert.match(gameIndex, /launchParams\.get\("autostart"\) === "1"/);
+  assert.match(gameIndex, /track\/RF87t6b6\/drive/);
+});
+
 test("provides Micro Racing behind the shared portal port", async () => {
   const serverSource = await readFile(
     new URL("../lan/micro-racing-server.ts", import.meta.url),
