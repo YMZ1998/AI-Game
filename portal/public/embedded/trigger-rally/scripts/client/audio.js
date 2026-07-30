@@ -54,7 +54,10 @@ function(util) {
   };
 
   prot.loadBuffer = function(url, callback) {
-    url = window.BASE_PATH + url
+    var basePath = window.BASE_PATH || "";
+    if (basePath && url.indexOf(basePath + "/") !== 0) {
+      url = basePath + "/" + url.replace(/^\/+/, "");
+    }
     if (url in this.buffers) {
       var buffer = this.buffers[url];
       if (buffer instanceof CallbackQueue) {

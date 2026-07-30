@@ -175,7 +175,14 @@ define([
 
         this.game = null;
 
-        this.socket = io.connect('/drive');
+        this.socket =
+          window.io && typeof window.io.connect === 'function'
+            ? window.io.connect('/drive')
+            : {
+                on() { return this; },
+                emit() { return this; },
+                disconnect() {}
+              };
         // TODO: Just display a simple red/green online indicator?
         // @socket.on 'connect_failed', -> Backbone.trigger 'app:status', 'Socket connect failed'
         // @socket.on 'disconnect', -> Backbone.trigger 'app:status', 'Socket disconnected'

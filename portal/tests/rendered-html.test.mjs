@@ -132,6 +132,24 @@ test("ships every game as a same-origin embedded build", async () => {
   }
 });
 
+test("rewrites Trigger Rally's extensionless API fixture asset paths", async () => {
+  const fixtureUrl = new URL(
+    "../public/embedded/trigger-rally/v1/cars/Icarus",
+    import.meta.url,
+  );
+  const fixture = await readFile(fixtureUrl, "utf8");
+
+  assert.match(
+    fixture,
+    /"scene":"\/embedded\/trigger-rally\/a\/meshes\/icarus-body\.json"/,
+  );
+  assert.match(
+    fixture,
+    /"engine":"\/embedded\/trigger-rally\/a\/sounds\/engine1\.ogg"/,
+  );
+  assert.doesNotMatch(fixture, /"\/a\//);
+});
+
 test("provides Micro Racing behind the shared portal port", async () => {
   const serverSource = await readFile(
     new URL("../lan/micro-racing-server.ts", import.meta.url),

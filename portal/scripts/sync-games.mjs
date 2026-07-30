@@ -154,7 +154,12 @@ async function patchCopiedTextAssets(destination, slug, clientFiles) {
   const copiedFiles = await listFiles(destination);
 
   for (const relative of copiedFiles) {
-    if (!/\.(?:css|html|js|json|map|txt)$/i.test(relative)) continue;
+    const isKnownTextAsset = /\.(?:css|html|js|json|map|txt)$/i.test(relative);
+    const isTriggerRallyApiFixture =
+      slug === "trigger-rally" &&
+      relative.startsWith("v1/") &&
+      path.extname(relative) === "";
+    if (!isKnownTextAsset && !isTriggerRallyApiFixture) continue;
     const absolute = path.join(destination, ...relative.split("/"));
     const source = await readFile(absolute, "utf8");
     const rewritten = rewriteResourcePaths(source, slug, clientFiles);

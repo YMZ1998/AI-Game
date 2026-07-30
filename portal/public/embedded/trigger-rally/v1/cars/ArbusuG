@@ -24,21 +24,21 @@
 			]
 		},
 		"meshes" : {
-			"body" : "/a/meshes/car1-body.json",
-			"wheel" : "/a/meshes/car1-wheel.json"
+			"body" : "/embedded/trigger-rally/a/meshes/car1-body.json",
+			"wheel" : "/embedded/trigger-rally/a/meshes/car1-wheel.json"
 		},
 		"sounds" : {
-			"engine" : "/a/sounds/engine1.ogg",
+			"engine" : "/embedded/trigger-rally/a/sounds/engine1.ogg",
 			"engineRpm" : 7500,
-			"transmission" : "/a/sounds/gearwhine.ogg",
+			"transmission" : "/embedded/trigger-rally/a/sounds/gearwhine.ogg",
 			"transmissionRpm" : 600,
-			"wind" : "/a/sounds/wind.ogg",
+			"wind" : "/embedded/trigger-rally/a/sounds/wind.ogg",
 			"windSpeed" : 40,
 			"crash" : [
-				"/a/sounds/crash1.ogg",
-				"/a/sounds/crash2.ogg"
+				"/embedded/trigger-rally/a/sounds/crash1.ogg",
+				"/embedded/trigger-rally/a/sounds/crash2.ogg"
 			],
-			"skid" : "/a/sounds/scrape2.ogg"
+			"skid" : "/embedded/trigger-rally/a/sounds/scrape2.ogg"
 		},
 		"wheels" : [
 			{
