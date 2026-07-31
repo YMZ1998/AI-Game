@@ -8,7 +8,7 @@ define(["./solitaire"], function (solitaire) {
     };
     (function () {
         const active = {
-            name: "freecell", // name: "klondike",
+            name: "klondike",
             game: null,
         };
         const yui = YUI({ base: "js/yui-unpack/yui/build/" });
@@ -525,7 +525,7 @@ define(["./solitaire"], function (solitaire) {
             active.game.newGame();
         }
         newGameRun = function () {
-            playGame("freecell");
+            playGame(active.name);
         };
 
         function exportAPI() {

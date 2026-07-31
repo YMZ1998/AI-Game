@@ -34,13 +34,17 @@
  
           <div class="label-field">
             <label for="roomid">房间号</label>
-            <input type="text" readonly id="roomid" name="roomid" aria-describedby="room-tip"/>
+            <div class="room-code-row">
+              <input type="text" readonly id="roomid" name="roomid" aria-describedby="room-tip"/>
+              <button type="button" id="copy-room" class="copy-button">复制</button>
+            </div>
             <small id="room-tip">把这个房间号发给同一局域网中的朋友。</small>
           </div>
           
           <div class="label-field">
-            <label for="create-score">本局筹码</label>
+            <label for="create-score">本局积分</label>
             <input id="create-score" type="number" min="1" max="9999" value="100" required name="bidamt"/>
+            <small>仅用于本局胜负记录，不涉及真实货币。</small>
           </div>
 
           <div class="label-field">
@@ -68,12 +72,13 @@
  
           <div class="label-field">
             <label for="join-room">房间号</label>
-            <input id="join-room" type="text" required maxlength="12" name="roomid" placeholder="输入朋友分享的房间号"/>
+            <input id="join-room" type="text" required maxlength="12" name="roomid" pattern="[A-Za-z0-9]+" placeholder="输入朋友分享的房间号"/>
           </div>
           
           <div class="label-field">
-            <label for="join-score">本局筹码</label>
+            <label for="join-score">本局积分</label>
             <input id="join-score" type="number" min="1" max="9999" value="100" required name="bidamt"/>
+            <small>仅用于本局胜负记录，不涉及真实货币。</small>
           </div>
           
           <div class="label-field">

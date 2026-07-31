@@ -159,9 +159,38 @@ small {
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+button:focus-visible {
   outline: 3px solid #72d7ff;
   outline-offset: 3px;
+}
+
+.room-code-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.room-code-row input {
+  flex: 1;
+}
+
+.copy-button {
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 4px;
+  background: #f4bd50;
+  color: #171226;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.label-field small {
+  display: block;
+  margin-top: 7px;
+  color: #c7d4df;
+  line-height: 1.4;
 }
 
 @media (max-width: 641px) {

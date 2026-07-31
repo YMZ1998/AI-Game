@@ -17,6 +17,12 @@
         </header>
 
         <p class="rule">点数尽量接近 21，但不要超过。庄家达到 17 点后停牌。</p>
+        <div class="session" aria-label="本次游戏战绩">
+            <span>第 <strong id="round-count">1</strong> 局</span>
+            <span>胜 <strong id="win-count">0</strong></span>
+            <span>负 <strong id="loss-count">0</strong></span>
+            <span>平 <strong id="tie-count">0</strong></span>
+        </div>
         <h2 id="game-status" aria-live="polite"></h2>
 
         <section class="hand">
@@ -36,8 +42,8 @@
         </section>
 
         <div class="actions">
-            <button id="hit-btn" type="button">要牌</button>
-            <button id="stay-btn" type="button">停牌</button>
+            <button id="hit-btn" type="button" title="快捷键 H">要牌 <kbd>H</kbd></button>
+            <button id="stay-btn" type="button" title="快捷键 S">停牌 <kbd>S</kbd></button>
             <button id="play-again-btn" type="button">再玩一局</button>
         </div>
     </main>

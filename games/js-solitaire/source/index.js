@@ -7,6 +7,41 @@ const finishContainerEl = document.getElementById('js-finish');
 const deskContainerEl = document.getElementById('js-board');
 const deckPileEl = document.getElementById('js-deck-pile');
 const resetEl = document.getElementById('js-reset');
+const hintEl = document.getElementById('js-hint');
+const movesEl = document.getElementById('js-moves');
+const timeEl = document.getElementById('js-time');
+const statusEl = document.getElementById('js-status');
+
+let moveCount = 0;
+let startedAt = Date.now();
+let timer;
+
+const updateTimer = () => {
+    const seconds = Math.floor((Date.now() - startedAt) / 1000);
+    const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const remainder = (seconds % 60).toString().padStart(2, '0');
+    timeEl.textContent = `${minutes}:${remainder}`;
+};
+
+const setStatus = message => {
+    statusEl.textContent = message;
+};
+
+const recordMove = message => {
+    moveCount++;
+    movesEl.textContent = moveCount;
+    setStatus(message);
+};
+
+const resetProgress = () => {
+    moveCount = 0;
+    movesEl.textContent = '0';
+    startedAt = Date.now();
+    updateTimer();
+    clearInterval(timer);
+    timer = setInterval(updateTimer, 1000);
+    setStatus('移动红黑相间的降序牌列');
+};
 
 const cardWidth = 71;
 const cardHeight = 96;
@@ -227,6 +262,7 @@ function dealCards() {
 }
 
 function resetGame() {
+    resetProgress();
     // clear decks
     for (let i = 0; i < 7; i++) {
         state.desk[i].cards = [];
@@ -297,6 +333,7 @@ const handleClick = index => event => {
                 faceUpLastOnDesk(pile);
             }
             targetEl.appendChild(el);
+            recordMove(destTarget === 'finish' ? '已移入收牌区' : '已移动一组牌');
         } else {
             return;
         }
@@ -315,11 +352,13 @@ const handleClick = index => event => {
                 moveCardTo('deal', 'deal', card);
                 dealEl.appendChild(el);
             }
+            recordMove('已翻开三张牌');
         }
     }
 };
 
 function restartDeal() {
+    if (state.deal.deal.cards.length === 0) return;
     state.deal.pile.cards = state.deal.deal.cards;
     state.deal.deal.cards = [];
 
@@ -328,6 +367,7 @@ function restartDeal() {
         faceDown(card);
         deckPileEl.appendChild(el);
     }
+    recordMove('牌堆已重新翻面');
 }
 
 function getMousePosition(event) {
@@ -418,6 +458,7 @@ const dropCard = (x, y) => {
             moveCardTo(dest, pile, card);
 
             destination.el.appendChild(state.moving.element);
+            recordMove(dest === 'finish' ? '已移入收牌区' : '拖动完成');
 
             // check game finish
             gameFinish();
@@ -544,7 +585,48 @@ const gameFinish = () => {
     }
 
     const { width, height, left, top } = gameEl.getBoundingClientRect();
+    clearInterval(timer);
+    setStatus(`完成牌局！共 ${moveCount} 步，用时 ${timeEl.textContent}`);
     win(width, height, left, top);
+};
+
+const showHint = () => {
+    document.querySelectorAll('.hint-source, .hint-target').forEach(element => {
+        element.classList.remove('hint-source', 'hint-target');
+    });
+
+    for (let index = 0; index < state.cards.length; index++) {
+        const card = getCard(index);
+        if (!card.facingUp) continue;
+
+        const location = getCardLocation(index);
+        if (!location) continue;
+        if (location.location === 'deal' && location.pile === 'deal') {
+            const last = getLastOnPile('deal', 'deal');
+            if (last.el !== card.el) continue;
+        }
+
+        const destinations = getAvailableDestinations(index, true);
+        if (destinations.length > 0) {
+            card.el.classList.add('hint-source');
+            destinations[0].el.classList.add('hint-target');
+            setStatus('高亮的牌可以移到发光位置');
+            window.setTimeout(() => {
+                card.el.classList.remove('hint-source');
+                destinations[0].el.classList.remove('hint-target');
+            }, 1800);
+            return;
+        }
+    }
+
+    if (state.deal.pile.cards.length > 0) {
+        deckPileEl.classList.add('hint-target');
+        setStatus('当前没有可移动的明牌，试试翻牌');
+        window.setTimeout(() => deckPileEl.classList.remove('hint-target'), 1800);
+        return;
+    }
+
+    setStatus('暂时没有可用移动，可以重新开局');
 };
 
 window.win = () => {
@@ -715,8 +797,14 @@ function initSolitaire() {
 
     dealPileEl.onclick = restartDeal;
     resetEl.onclick = resetGame;
+    hintEl.onclick = showHint;
     window.onmousemove = handleMove;
     window.onmouseup = releaseMove;
+    window.addEventListener('keydown', event => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (event.key.toLowerCase() === 'n') resetGame();
+        if (event.key.toLowerCase() === 'h') showHint();
+    });
 
     resetGame();
 }

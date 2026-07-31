@@ -15,7 +15,11 @@
                 经典纸牌
             </div>
             <div class="window__actions">
-                <button type="button" id="js-reset" class="new-game">新游戏</button>
+                <button type="button" id="js-reset" class="new-game" title="快捷键 N">新游戏</button>
+                <button type="button" id="js-hint" class="new-game" title="快捷键 H">提示</button>
+                <span class="game-stat">步数 <strong id="js-moves">0</strong></span>
+                <span class="game-stat">时间 <strong id="js-time">00:00</strong></span>
+                <span id="js-status" class="game-status" aria-live="polite">移动红黑相间的降序牌列</span>
             </div>
             <div class="window__content">
                 <div class="window__content-inner">

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xml:lang="zh-CN">
 
-<head><meta name="playroom-embedded" content="solitairey">
-	<title>Solitairey - Beautiful HTML5 Solitaire</title>
+<head>
+	<meta name="playroom-embedded" content="solitairey" />
+	<title>纸牌合集 · 19 种经典玩法</title>
     <meta charset="utf-8" />
-	<meta name="description" content="A modern solitaire collection for the web. Built with HTML5 and Javascript." />
+	<meta name="description" content="可离线游玩的经典纸牌合集，包含空当接龙、接龙、蜘蛛纸牌等玩法。" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
     <meta property="fb:admins" content="100000659492810" />
 	<link rel="stylesheet" href="cards.css" />
@@ -64,22 +65,23 @@ requirejs.config({
 
 	<ul id="menu">
 		<li class="begin">
-			<a id="new_deal">Deal New Cards</a>
+			<a id="new_deal" role="button" tabindex="0">新牌局 <kbd>N</kbd></a>
 		</li>
 		<li>
-			<a id="restart">Restart Game</a>
+			<a id="restart" role="button" tabindex="0">重新开始 <kbd>R</kbd></a>
 		</li>
 		<li>
-			<a id="choose_game">Choose Solitaire Game...</a>
+			<a id="choose_game" role="button" tabindex="0">选择玩法 <kbd>G</kbd></a>
 		</li>
                 <li class="end">
-			<a id="undo">Undo</a>
+			<a id="undo" role="button" tabindex="0">撤销 <kbd>Z</kbd></a>
 		</li>
     </ul>
+	<p id="playroom-help" aria-live="polite">默认玩法：经典接龙 · 点击卡牌可自动移动到可用位置</p>
 
 
 	<div id="game-chooser">
-        <button id="close-chooser">Return to game</button>
+        <button id="close-chooser">返回牌局</button>
 		<div id="game-chooser-contents">
 		<ul id="descriptions">
 			<li id="agnes">
@@ -382,9 +384,37 @@ requirejs.config({
 	</div>
     <footer>
          <p>
-         <a href="https://github.com/foss-card-games/Solitairey">Source code / GitHub repo</a>
+         <a href="https://github.com/foss-card-games/Solitairey">开源项目与许可</a>
          </p>
     </footer>
+	<script>
+	(function () {
+		const shortcuts = {
+			n: "new_deal",
+			r: "restart",
+			g: "choose_game",
+			z: "undo"
+		};
+		document.addEventListener("keydown", function (event) {
+			if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest("input, textarea, select")) {
+				return;
+			}
+			const id = shortcuts[event.key.toLowerCase()];
+			if (id) {
+				event.preventDefault();
+				document.getElementById(id).click();
+			}
+		});
+		document.querySelectorAll("#menu a[role='button']").forEach(function (control) {
+			control.addEventListener("keydown", function (event) {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					control.click();
+				}
+			});
+		});
+	}());
+	</script>
 
 </body>
 </html>

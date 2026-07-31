@@ -92,6 +92,27 @@ h1 {
     white-space: pre-line;
 }
 
+.session {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px auto 0;
+    flex-wrap: wrap;
+}
+
+.session span {
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 248, 231, .2);
+    border-radius: 999px;
+    background: rgba(6, 36, 23, .28);
+    color: #e9d6a9;
+    font-size: 13px;
+}
+
+.session strong {
+    color: #fff8e7;
+}
+
 .hand {
     margin-top: 12px;
 }
@@ -159,6 +180,23 @@ h1 {
 
 .actions button:hover {
     transform: translateY(-2px);
+}
+
+.actions button:disabled {
+    transform: none;
+    cursor: not-allowed;
+    filter: grayscale(.65);
+    opacity: .48;
+    box-shadow: 0 4px 0 #645630;
+}
+
+kbd {
+    margin-left: 5px;
+    padding: 2px 5px;
+    border: 1px solid rgba(27, 18, 5, .35);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, .28);
+    font: 11px Arial, sans-serif;
 }
 
 button:focus-visible {

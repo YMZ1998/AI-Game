@@ -235,6 +235,38 @@ body {
     box-shadow: 0 0 0 1px #03ffff;
 }
 
+.hint-source {
+    box-shadow: 0 0 0 3px #ffff00, 0 0 14px 5px #ffff00 !important;
+}
+
+.hint-target {
+    box-shadow: 0 0 0 3px #03ffff, 0 0 14px 5px #03ffff !important;
+}
+
+.game-stat {
+    margin-left: 12px;
+    white-space: nowrap;
+
+    strong {
+        display: inline-block;
+        min-width: 30px;
+        padding: 2px 5px;
+        border: 1px inset #fff;
+        background: #fff;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+    }
+}
+
+.game-status {
+    float: right;
+    max-width: 275px;
+    padding-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .window {
     margin: 20px auto;
     width: 671px;
@@ -278,6 +310,7 @@ body {
     &__actions {
         padding: 4px 8px;
         font-size: 11px;
+        min-height: 34px;
     }
 
     &__content {

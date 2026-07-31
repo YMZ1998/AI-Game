@@ -1,7 +1,7 @@
 const users = [];
 
 //Join User to chat
-userJoin = (id,username,roomid,bidamt,type)=>
+const userJoin = (id,username,roomid,bidamt,type)=>
 {
     const user= {id , username, roomid, bidamt,type};
     users.push(user);
@@ -14,7 +14,7 @@ function getCurrentUser(id){
 }
 
 //User Leaves Chat
-userLeaves = (id) =>
+const userLeaves = (id) =>
 {
     const index=users.findIndex(user=> user.id === id);
     if(index!==-1)
@@ -24,7 +24,7 @@ userLeaves = (id) =>
 }
 
 //Get Room Users
-getRoomUsers=(roomid)=>
+const getRoomUsers=(roomid)=>
 {
     return users.filter(user=> user.roomid===roomid);
 }

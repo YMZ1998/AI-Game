@@ -1,4 +1,3 @@
-@import url(https://fonts.googleapis.com/css?family=Questrial);
 .solitairey_body_margin {
   padding: 50px; }
 
@@ -78,7 +77,18 @@
     display: block;
     margin: 7px 0 -7px;
     padding: 0 10px;
-    height: 100%; }
+    height: 100%;
+    cursor: pointer; }
+  #menu a:focus-visible {
+    outline: 3px solid #7ed7ff;
+    outline-offset: -2px; }
+  #menu kbd {
+    margin-left: 4px;
+    padding: 1px 4px;
+    border: 1px solid #777;
+    border-radius: 3px;
+    background: #fff;
+    font: 11px Arial, sans-serif; }
   #menu li.end a {
     padding-right: 12px; }
 
@@ -97,7 +107,7 @@
   #game-chooser.show {
     display: block; }
   #game-chooser h2 {
-    font: 20px Questrial;
+    font: 20px Arial, sans-serif;
     text-align: center;
     padding: 6px 0 6px 0;
     background: rgba(255, 255, 255, 0.5); }
@@ -153,6 +163,20 @@
   margin: 20px auto;
   width: 300px;
   display: block; }
+
+#playroom-help {
+  position: absolute;
+  top: 47px;
+  left: 20%;
+  z-index: 20;
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid rgba(244, 241, 232, 0.35);
+  border-radius: 6px;
+  color: #f4f1e8;
+  background: rgba(11, 90, 43, 0.82);
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
 
 #win_display {
   background-color: #eec;

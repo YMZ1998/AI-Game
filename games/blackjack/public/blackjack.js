@@ -12,12 +12,16 @@ const cardSfx = new Audio("assets/sfx/new_card.mp3");
 const gameOverSfx = new Audio("assets/sfx/card_game_over.wav");
 
 var hiddenCard;
+var hiddenCardCode;
 var deck = [];
 var canHit = true;
 var canStay = true;
 var firstTime = true;
-var sounds = true;
+var sounds = localStorage.getItem("blackjack-sounds") !== "off";
 var animationDelay = 500;
+var roundCount = 0;
+var sessionRecord = { wins: 0, losses: 0, ties: 0 };
+var audioUnlocked = false;
 
 var hitBtn;
 var stayBtn;
@@ -37,6 +41,12 @@ window.onload = function()
     soundsBtn.addEventListener("click", toggleSound);
     playAgainBtn.addEventListener("click", playAgain);
     playAgainBtn.style.visibility = "hidden";
+    soundsBtn.innerText = sounds ? "声音：开" : "声音：关";
+    soundsBtn.setAttribute("aria-pressed", String(sounds));
+    soundsBtn.setAttribute("aria-label", sounds ? "关闭声音" : "开启声音");
+    document.addEventListener("keydown", handleShortcut);
+    document.addEventListener("pointerdown", () => { audioUnlocked = true; }, { once: true });
+    document.addEventListener("keydown", () => { audioUnlocked = true; }, { once: true });
 
     startGame();
 }
@@ -44,6 +54,10 @@ window.onload = function()
 async function startGame()
 {
     let ms = firstTime ? 0 : animationDelay;
+    roundCount++;
+    document.getElementById("round-count").innerText = roundCount;
+    setStatus("正在发牌…");
+    setControls(false);
 
     deck = [];
     buildDeck();
@@ -64,16 +78,22 @@ async function startGame()
     addCardTo("player");
     updateScores();
     
-    canHit = true;
-    canStay = true;
+    setControls(true);
+    setStatus(getHand("player") === 21 ? "天生二十一点！庄家正在亮牌…" : "轮到你：要牌或停牌");
     firstTime = false;
+
+    if(getHand("player") === 21)
+    {
+        await wait(animationDelay);
+        await stay();
+    }
 }
 
 function buildDeck()
 {
-    for(i = 0; i < suits.length; i++)
+    for(let i = 0; i < suits.length; i++)
     {
-        for(j = 0; j < values.length; j++)
+        for(let j = 0; j < values.length; j++)
         {
             deck.push(values[j] + "-" + suits[i]);
         }
@@ -107,8 +127,10 @@ function addCardTo(subject)
 
 function addHiddenCard()
 {
+    hiddenCardCode = deck.pop();
     hiddenCard = document.createElement("img");
     hiddenCard.src = "assets/cards/hidden.png";
+    hiddenCard.alt = "庄家的暗牌";
 
     spawnCard(hiddenCard, "dealer");
 }
@@ -124,6 +146,7 @@ function createCard(card)
     let img = document.createElement("img");
 
     img.src = "assets/cards/" + card + ".png";
+    img.alt = card.replace("-", " ");
 
     return img;
 }
@@ -151,9 +174,11 @@ async function hit()
     }
 
     addCardTo("player");
+    setStatus("你选择了要牌");
 
     if(getHand("player") > 21)
     {
+        setStatus("爆牌！庄家正在亮牌…");
         await wait(animationDelay);
         await stay();
     }
@@ -166,18 +191,20 @@ async function stay()
         return;
     }
 
-    canStay = false;
-    canHit = false;
+    setControls(false);
+    setStatus("庄家翻开暗牌…");
 
-    while (hand.get("dealer") < 17)
+    revealCard();
+    await wait(animationDelay);
+
+    while (getHand("player") <= 21 && getHand("dealer") < 17)
     {
-        await addCardTo("dealer");
+        setStatus("庄家点数不足 17，继续补牌…");
+        addCardTo("dealer");
         await wait(animationDelay * 1.5);
     }
 
     await wait(animationDelay * 0.25);
-    revealCard();
-    await wait(animationDelay);
     checkWinner();
 }
 
@@ -194,37 +221,43 @@ function getHand(subject)
 
 function revealCard()
 {
-    let card = deck.pop();
-    hiddenCard.src = createCard(card).src;
+    hiddenCard.src = createCard(hiddenCardCode).src;
+    hiddenCard.alt = hiddenCardCode.replace("-", " ");
 
-    addValueToHand(getCardValue(card), "dealer");
+    addValueToHand(getCardValue(hiddenCardCode), "dealer");
     playSound(cardSfx);
     updateScores();
 }
 
 function checkWinner()
 {
-    let status = document.getElementById("game-status");
     let dealer = getHand("dealer");
     let player = getHand("player");
+    let result;
 
     if (player > 21)
     {
-        status.innerText = "庄家获胜\n你的点数超过了 21";
+        setStatus("庄家获胜\n你的点数超过了 21");
+        result = "losses";
     }
     else if (dealer > 21)
     {
-        status.innerText = "你赢了\n庄家点数超过了 21";
+        setStatus("你赢了\n庄家点数超过了 21");
+        result = "wins";
     }
     else if (player === dealer)
     {
-        status.innerText = "平局";
+        setStatus("平局");
+        result = "ties";
     }
     else
     {
-        status.innerText = player > dealer ? "你赢了！" : "庄家获胜";
+        result = player > dealer ? "wins" : "losses";
+        setStatus(player > dealer ? "你赢了！" : "庄家获胜");
     }
 
+    sessionRecord[result]++;
+    updateRecord();
     playSound(gameOverSfx);
     endGame();
 }
@@ -258,6 +291,48 @@ function playAgain()
     document.getElementById("game-status").innerText = "";
     clearHands();
     startGame();
+}
+
+function setControls(enabled)
+{
+    canHit = enabled;
+    canStay = enabled;
+    hitBtn.disabled = !enabled;
+    stayBtn.disabled = !enabled;
+}
+
+function setStatus(message)
+{
+    document.getElementById("game-status").innerText = message;
+}
+
+function updateRecord()
+{
+    document.getElementById("win-count").innerText = sessionRecord.wins;
+    document.getElementById("loss-count").innerText = sessionRecord.losses;
+    document.getElementById("tie-count").innerText = sessionRecord.ties;
+}
+
+function handleShortcut(event)
+{
+    if(event.ctrlKey || event.metaKey || event.altKey)
+    {
+        return;
+    }
+
+    const key = event.key.toLowerCase();
+    if(key === "h")
+    {
+        hit();
+    }
+    else if(key === "s")
+    {
+        stay();
+    }
+    else if(key === "n" && playAgainBtn.style.visibility === "visible")
+    {
+        playAgain();
+    }
 }
 
 function adjustAceCount(increment, subject)
@@ -300,6 +375,7 @@ function preloadImages() {
 function toggleSound()
 {
     sounds = !sounds;
+    localStorage.setItem("blackjack-sounds", sounds ? "on" : "off");
     soundsBtn.innerText = sounds ? "声音：开" : "声音：关";
     soundsBtn.setAttribute("aria-pressed", String(sounds));
     soundsBtn.setAttribute("aria-label", sounds ? "关闭声音" : "开启声音");
@@ -307,9 +383,14 @@ function toggleSound()
 
 function playSound(audio)
 {
-    if (audio && typeof audio.play === 'function' && sounds)
+    const hasActiveGesture = !navigator.userActivation || navigator.userActivation.isActive;
+    if (audio && typeof audio.play === 'function' && sounds && audioUnlocked && hasActiveGesture)
     {
-        audio.play();
+        const playback = audio.play();
+        if (playback && typeof playback.catch === "function")
+        {
+            playback.catch(() => {});
+        }
     }
 }
 
