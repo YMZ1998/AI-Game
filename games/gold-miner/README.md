@@ -24,4 +24,3 @@ npm run build
 - `app/`：游戏界面和核心逻辑
 - `public/`：图标与社交分享图片
 - `tests/`：渲染测试
-- `.openai/hosting.json`：Sites 托管配置

@@ -51,4 +51,3 @@ npm test
 - `app/`：游戏界面、绘制和核心玩法
 - `public/`：分享图片与静态资源
 - `tests/`：服务端渲染测试
-- `.openai/hosting.json`：Sites 托管配置
