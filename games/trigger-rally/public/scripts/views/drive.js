@@ -385,7 +385,7 @@ define([
         });
 
         const $sharetwitter = this.$('.sharebutton.twitter');
-        $sharetwitter.attr('href', `https://twitter.com/share?url=${targetUrl}&via=TriggerRally&text=${shareText}&related=jareiko`);
+        $sharetwitter.attr('href', `https://twitter.com/share?url=${targetUrl}&text=${shareText}`);
         $sharetwitter.on('click', function() {
           window.open(this.href, 'twitter-share-dialog', 'width=626,height=436');
           ga('send', 'social', 'Twitter', 'TweetPrompt', targetUrl);

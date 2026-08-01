@@ -60,7 +60,7 @@ require.register("compiler.js", function(module, exports, require){
 
 /*!
  * Jade - Compiler
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -712,7 +712,7 @@ require.register("doctypes.js", function(module, exports, require){
 
 /*!
  * Jade - doctypes
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -733,7 +733,7 @@ require.register("filters.js", function(module, exports, require){
 
 /*!
  * Jade - filters
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -834,7 +834,7 @@ require.register("inline-tags.js", function(module, exports, require){
 
 /*!
  * Jade - inline tags
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -864,7 +864,7 @@ module.exports = [
 require.register("jade.js", function(module, exports, require){
 /*!
  * Jade
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -1118,7 +1118,7 @@ exports.__express = exports.renderFile;
 require.register("lexer.js", function(module, exports, require){
 /*!
  * Jade - Lexer
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -1897,7 +1897,7 @@ require.register("nodes/attrs.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Attrs
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -1980,7 +1980,7 @@ require.register("nodes/block-comment.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - BlockComment
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2018,7 +2018,7 @@ require.register("nodes/block.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Block
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2146,7 +2146,7 @@ require.register("nodes/case.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Case
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2197,7 +2197,7 @@ require.register("nodes/code.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Code
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2237,7 +2237,7 @@ require.register("nodes/comment.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Comment
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2274,7 +2274,7 @@ require.register("nodes/doctype.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Doctype
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2308,7 +2308,7 @@ require.register("nodes/each.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Each
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2348,7 +2348,7 @@ require.register("nodes/filter.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Filter
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2388,7 +2388,7 @@ require.register("nodes/index.js", function(module, exports, require){
 
 /*!
  * Jade - nodes
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2412,7 +2412,7 @@ require.register("nodes/literal.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Literal
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2450,7 +2450,7 @@ require.register("nodes/mixin.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Mixin
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2492,7 +2492,7 @@ require.register("nodes/node.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Node
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2521,7 +2521,7 @@ require.register("nodes/tag.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Tag
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2621,7 +2621,7 @@ require.register("nodes/text.js", function(module, exports, require){
 
 /*!
  * Jade - nodes - Text
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -2662,7 +2662,7 @@ require.register("parser.js", function(module, exports, require){
 
 /*!
  * Jade - Parser
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -3381,7 +3381,7 @@ require.register("runtime.js", function(module, exports, require){
 
 /*!
  * Jade - runtime
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -3559,7 +3559,7 @@ require.register("self-closing.js", function(module, exports, require){
 
 /*!
  * Jade - self closing tags
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -3581,7 +3581,7 @@ require.register("utils.js", function(module, exports, require){
 
 /*!
  * Jade - utils
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 
@@ -3715,7 +3715,7 @@ if(false) {
 var jade = (function(exports){
 /*!
  * Jade - runtime
- * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * Copyright(c) 2010 TJ Holowaychuk <contact-removed>
  * MIT Licensed
  */
 

@@ -705,7 +705,7 @@
             if (inst.setup)
                 args = inst.setup.apply(inst, arguments);
 
-            // Added by martin@playcraftlabs.com -- fix for deep cloning of properties
+            // Added by contact-removed -- fix for deep cloning of properties
             for (var prop in inst.__proto__)
                 inst[prop] = cloneObject(inst[prop]);
 

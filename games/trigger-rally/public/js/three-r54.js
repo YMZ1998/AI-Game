@@ -30969,7 +30969,7 @@ THREE.CubeCamera = function ( near, far, cubeResolution ) {
 
 THREE.CubeCamera.prototype = Object.create( THREE.Object3D.prototype );
 /*
- *	@author zz85 / http://twitter.com/blurspline / http://www.lab4games.net/zz85/blog
+ *	@author zz85
  *
  *	A general perpose camera, for setting FOV, Lens Focal Length,
  *		and switching between perspective and orthographic views easily.

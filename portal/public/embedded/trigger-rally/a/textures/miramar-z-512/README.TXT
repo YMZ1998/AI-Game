@@ -7,7 +7,7 @@ ships as TGA.
 
 
 By Jockum Skoglund aka hipshot
-hipshot@zfight.com
+contact-removed
 www.zfight.com
 Stockholm, 2005 08 25
 

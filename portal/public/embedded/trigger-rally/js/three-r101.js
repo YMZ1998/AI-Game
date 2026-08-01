@@ -21090,7 +21090,7 @@ function create (exports) {
   }
 
   /**
-   * @author thespite / http://www.twitter.com/thespite
+   * @author thespite
    */
 
   function WebGLUtils( gl, extensions, capabilities ) {
@@ -25095,7 +25095,7 @@ function create (exports) {
   } );
 
   /**
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    */
 
   function InterleavedBuffer( array, stride ) {
@@ -25203,7 +25203,7 @@ function create (exports) {
   } );
 
   /**
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    */
 
   function InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, normalized ) {
@@ -30008,7 +30008,7 @@ function create (exports) {
 
   /**
    * @author mrdoob / http://mrdoob.com/
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    * @author Mugen87 / https://github.com/Mugen87
    */
 
@@ -31150,7 +31150,7 @@ function create (exports) {
   ConeBufferGeometry.prototype.constructor = ConeBufferGeometry;
 
   /**
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    * @author Mugen87 / https://github.com/Mugen87
    * @author hughes
    */
@@ -43481,7 +43481,7 @@ function create (exports) {
   };
 
   /**
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    */
 
   function InstancedBufferGeometry() {
@@ -43518,7 +43518,7 @@ function create (exports) {
   } );
 
   /**
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    */
 
   function InstancedInterleavedBuffer( array, stride, meshPerAttribute ) {
@@ -43548,7 +43548,7 @@ function create (exports) {
   } );
 
   /**
-   * @author benaadams / https://twitter.com/ben_a_adams
+   * @author benaadams
    */
 
   function InstancedBufferAttribute( array, itemSize, normalized, meshPerAttribute ) {
@@ -44508,7 +44508,7 @@ function create (exports) {
   }();
 
   /**
-   * @author Sean Griffin / http://twitter.com/sgrif
+   * @author Sean Griffin
    * @author Michael Guerrero / http://realitymeltdown.com
    * @author mrdoob / http://mrdoob.com/
    * @author ikerr / http://verold.com

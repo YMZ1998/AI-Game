@@ -1,5 +1,5 @@
 // From http://baagoe.com/en/RandomMusings/javascript/
-// Johannes BaagÃ¸e <baagoe@baagoe.com>, 2010
+// Johannes BaagÃ¸e <contact-removed>, 2010
 
 
 define([

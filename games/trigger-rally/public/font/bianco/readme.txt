@@ -5,5 +5,5 @@ This freeware font from pOPdOG fONTS
 contains greek characters.
 
 
-e-mail: kolyris@usa.net
+e-mail: contact-removed
 
