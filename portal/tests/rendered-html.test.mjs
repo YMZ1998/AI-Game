@@ -507,5 +507,9 @@ test("embeds Starport Salvage with its complete idle loop", async () => {
   assert.match(gameSource, /function deliverOrder/);
   assert.match(gameSource, /function revealPanel/);
   assert.match(gameSource, /scrollIntoView/);
+  assert.match(gameSource, /upgradeFeedback/);
+  assert.match(gameSource, /✓ 已升级/);
+  assert.match(styleSource, /\.upgrade-card > button:active/);
+  assert.match(styleSource, /\.upgrade-card\.is-confirmed/);
   assert.match(styleSource, /prefers-reduced-motion/);
 });

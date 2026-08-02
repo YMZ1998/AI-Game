@@ -219,6 +219,7 @@ let lastRender = 0;
 let holdTimer = null;
 let musicTimer = null;
 let audioContext = null;
+let upgradeFeedback = null;
 
 function queryDom() {
   [
@@ -397,13 +398,18 @@ function purchaseUpgrade(type) {
   const cost = upgradeCost(type, state.levels[type], count);
   state.resources.credits = Math.max(0, state.resources.credits - cost);
   state.levels[type] += count;
+  upgradeFeedback = {
+    type,
+    count,
+    until: Date.now() + 1_600,
+  };
 
   if (state.tutorial.step === 1 && type === "salvage") {
     state.tutorial.step = 2;
     state.tutorial.observationStartedAt = Date.now();
   } else if (state.tutorial.step === 3 && type === "refinery") {
     state.tutorial.step = 4;
-    switchView("orders", true);
+    window.setTimeout(() => switchView("orders", true), 900);
   }
 
   playTone(440, 0.12, "triangle", 0.04);
@@ -543,20 +549,26 @@ function renderUpgrades() {
       const displayCount = state.buyMode === "max" ? Math.max(1, count) : state.buyMode;
       const cost = upgradeCost(type.id, state.levels[type.id], displayCount);
       const disabled = count < 1;
+      const confirmed =
+        upgradeFeedback?.type === type.id && Date.now() < upgradeFeedback.until;
       const tutorialTarget =
         (state.tutorial.step === 1 && type.id === "salvage") ||
         (state.tutorial.step === 3 && type.id === "refinery");
       return `
-        <article class="upgrade-card upgrade-card--${type.id}${tutorialTarget ? " tutorial-target" : ""}">
+        <article class="upgrade-card upgrade-card--${type.id}${tutorialTarget ? " tutorial-target" : ""}${
+          confirmed ? " is-confirmed" : ""
+        }">
           <span class="upgrade-card__icon" aria-hidden="true">${type.icon}</span>
           <div class="upgrade-card__copy">
             <span>${type.name} · LV.<b>${state.levels[type.id]}</b></span>
             <strong>${upgradeDescription(type.id, rates)}</strong>
-            <small>下一等级继续提升生产效率</small>
+            <small>${confirmed ? `升级成功 · 提升 ${upgradeFeedback.count} 级` : "下一等级继续提升生产效率"}</small>
           </div>
-          <button type="button" data-upgrade="${type.id}" ${disabled ? "disabled" : ""}>
-            <span>升级${displayCount > 1 ? ` ×${displayCount}` : ""}</span>
-            <strong><i>✦</i> ${formatNumber(cost)}</strong>
+          <button class="${confirmed ? "is-confirmed" : ""}" type="button" data-upgrade="${type.id}" ${
+            disabled ? "disabled" : ""
+          }>
+            <span>${confirmed ? "✓ 已升级" : `升级${displayCount > 1 ? ` ×${displayCount}` : ""}`}</span>
+            <strong>${confirmed ? `LV.${state.levels[type.id]}` : `<i>✦</i> ${formatNumber(cost)}`}</strong>
           </button>
         </article>`;
     })
