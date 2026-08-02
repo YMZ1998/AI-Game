@@ -49,7 +49,7 @@ The road canvas remains centered with tuning controls and keyboard instructions 
 
 ## Accessibility
 
-Arrow-key driving stays primary. Native selects and ranges retain their labels and keyboard interaction.
+WASD and arrow-key driving are both supported. Native selects and ranges retain their labels and keyboard interaction.
 
 ## Do's and Don'ts
 
