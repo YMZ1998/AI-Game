@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta name="playroom-embedded" content="starport-salvage-idle">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#07111f">
+    <meta name="color-scheme" content="dark">
+    <title>星港拾荒局</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="game.js"></script>
+  </head>
+  <body>
+    <main class="game" id="game">
+      <header class="topbar">
+        <div class="sector">
+          <span class="sector__eyebrow">赫尔墨斯星环</span>
+          <strong>新手残骸带</strong>
+        </div>
+        <button class="icon-button" id="settings-open" type="button" aria-label="打开设置">⚙</button>
+      </header>
+
+      <section class="resources" aria-label="资源">
+        <div class="resource-chip resource-chip--credits">
+          <span class="resource-icon" aria-hidden="true">✦</span>
+          <span><small>星币</small><strong id="credits-value">0</strong></span>
+        </div>
+        <div class="resource-chip resource-chip--alloy">
+          <span class="resource-icon" aria-hidden="true">⬡</span>
+          <span><small>合金 <i id="alloy-rate">+0/s</i></small><strong id="alloy-value">0</strong></span>
+        </div>
+        <div class="resource-chip resource-chip--scrap">
+          <span class="resource-icon" aria-hidden="true">▰</span>
+          <span><small>废金属 <i id="scrap-rate">+0/s</i></small><strong id="scrap-value">0</strong></span>
+        </div>
+      </section>
+
+      <section class="station" id="station" aria-label="星港生产场景">
+        <div class="space-haze space-haze--one"></div>
+        <div class="space-haze space-haze--two"></div>
+        <div class="stars" aria-hidden="true"></div>
+
+        <div class="station-label">
+          <span class="status-dot"></span>
+          <span id="station-status">生产线在线</span>
+          <strong id="credit-rate">+0 / 秒</strong>
+        </div>
+
+        <button class="wreck" id="wreck" type="button" aria-label="打捞漂浮残骸">
+          <span class="wreck__glow"></span>
+          <span class="wreck__hull"></span>
+          <span class="wreck__panel"></span>
+          <span class="wreck__antenna"></span>
+          <span class="wreck__label">按住打捞 <b id="wreck-yield">+1</b></span>
+        </button>
+
+        <div class="drone-lane" id="drone-lane" aria-label="打捞无人机"></div>
+
+        <div class="platform" aria-hidden="true">
+          <span class="platform__edge"></span>
+          <span class="platform__light platform__light--one"></span>
+          <span class="platform__light platform__light--two"></span>
+          <span class="platform__light platform__light--three"></span>
+        </div>
+
+        <div class="conveyor" id="conveyor" aria-label="废金属传送带">
+          <span class="conveyor__belt"></span>
+          <span class="conveyor__scrap conveyor__scrap--one">▰</span>
+          <span class="conveyor__scrap conveyor__scrap--two">▰</span>
+          <span class="conveyor__scrap conveyor__scrap--three">▰</span>
+        </div>
+
+        <div class="furnace" id="furnace" aria-label="精炼熔炉">
+          <span class="furnace__cap"></span>
+          <span class="furnace__core"></span>
+          <span class="furnace__window"></span>
+          <span class="furnace__state" id="furnace-state">精炼中</span>
+        </div>
+
+        <div class="freighter" id="freighter" aria-label="订单运输飞船">
+          <span class="freighter__body"></span>
+          <span class="freighter__wing freighter__wing--left"></span>
+          <span class="freighter__wing freighter__wing--right"></span>
+          <span class="freighter__engine"></span>
+        </div>
+
+        <div class="float-layer" id="float-layer" aria-live="polite"></div>
+      </section>
+
+      <section class="content">
+        <div class="tab-panel is-active" id="starport-view" data-panel="starport">
+          <div class="section-heading">
+            <div>
+              <span>STATION UPGRADES</span>
+              <h1>让星港更快运转</h1>
+            </div>
+            <div class="buy-mode" id="batch-selector" aria-label="购买数量">
+              <button class="is-active" type="button" data-batch="1">×1</button>
+              <button type="button" data-batch="10">×10</button>
+              <button type="button" data-batch="max">最大</button>
+            </div>
+          </div>
+
+          <div class="upgrade-list" id="upgrade-list">
+            <article class="upgrade-card upgrade-card--salvage">
+              <div class="upgrade-card__icon" aria-hidden="true">⌁</div>
+              <div class="upgrade-card__copy">
+                <span>打捞系统 · LV.<b id="salvage-level">1</b></span>
+                <strong id="salvage-rate">1 废金属/秒</strong>
+                <small id="salvage-change">点击与无人机产量提升</small>
+              </div>
+              <button type="button" data-upgrade="salvage">
+                <span>升级</span>
+                <strong><i>✦</i> <b id="salvage-cost">10</b></strong>
+              </button>
+            </article>
+
+            <article class="upgrade-card upgrade-card--refinery">
+              <div class="upgrade-card__icon" aria-hidden="true">◈</div>
+              <div class="upgrade-card__copy">
+                <span>精炼系统 · LV.<b id="refinery-level">1</b></span>
+                <strong id="refinery-rate">0.5 合金/秒</strong>
+                <small id="refinery-change">熔炉处理能力提升</small>
+              </div>
+              <button type="button" data-upgrade="refinery">
+                <span>升级</span>
+                <strong><i>✦</i> <b id="refinery-cost">25</b></strong>
+              </button>
+            </article>
+
+            <article class="upgrade-card upgrade-card--logistics">
+              <div class="upgrade-card__icon" aria-hidden="true">➤</div>
+              <div class="upgrade-card__copy">
+                <span>物流系统 · LV.<b id="logistics-level">1</b></span>
+                <strong id="logistics-rate">订单奖励 ×1.00</strong>
+                <small id="logistics-change">交付更快、奖励更高</small>
+              </div>
+              <button type="button" data-upgrade="logistics">
+                <span>升级</span>
+                <strong><i>✦</i> <b id="logistics-cost">50</b></strong>
+              </button>
+            </article>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="orders-view" data-panel="orders" hidden>
+          <div class="section-heading section-heading--orders">
+            <div>
+              <span>FREIGHT BOARD</span>
+              <h1>航线订单</h1>
+            </div>
+            <button class="refresh-button" id="refresh-orders" type="button"><span id="refresh-label">免费刷新</span></button>
+          </div>
+          <div class="orders" id="orders-list"></div>
+          <p class="orders-note" id="orders-note">合金会在接单时扣除，运输完成后发放星币。</p>
+        </div>
+      </section>
+
+      <nav class="bottom-nav" aria-label="主要页面">
+        <button class="is-active" id="nav-starport" type="button" data-tab="starport" aria-pressed="true">
+          <span aria-hidden="true">⌂</span>
+          星港
+        </button>
+        <button id="nav-orders" type="button" data-tab="orders" aria-pressed="false">
+          <span aria-hidden="true">▤</span>
+          订单
+          <i class="nav-badge" id="order-badge">3</i>
+        </button>
+      </nav>
+    </main>
+
+    <aside class="robot-tip" id="tutorial-tip" aria-live="polite">
+      <div class="robot-avatar" aria-hidden="true"><span>•</span><span>•</span></div>
+      <p><strong>螺帽</strong><span id="tutorial-copy">先敲三下那块大残骸，我想听听它还结不结实。</span></p>
+      <button id="tutorial-skip" type="button">跳过</button>
+    </aside>
+
+    <div class="modal-backdrop" id="offline-modal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="offline-title">
+        <span class="modal__eyebrow">STATION REPORT</span>
+        <h2 id="offline-title">欢迎返回星港</h2>
+        <p>离线 <strong id="offline-time">0 分钟</strong>，生产线为你积累了：</p>
+        <div class="offline-reward"><span>✦</span><strong id="offline-credits">0</strong><small>星币</small></div>
+        <button class="primary-button" id="offline-claim" type="button">领取离线收益</button>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="settings-modal" hidden>
+      <section class="modal modal--settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <button class="modal__close" id="settings-close" type="button" aria-label="关闭设置">×</button>
+        <span class="modal__eyebrow">CONTROL DECK</span>
+        <h2 id="settings-title">星港设置</h2>
+        <label class="toggle-row">
+          <span><strong>背景音乐</strong><small>轻松电子氛围</small></span>
+          <input id="music-toggle" type="checkbox">
+          <i aria-hidden="true"></i>
+        </label>
+        <label class="toggle-row">
+          <span><strong>操作音效</strong><small>打捞、收益与升级反馈</small></span>
+          <input id="sfx-toggle" type="checkbox" checked>
+          <i aria-hidden="true"></i>
+        </label>
+        <button class="danger-button" id="reset-progress" type="button">清除本地存档</button>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

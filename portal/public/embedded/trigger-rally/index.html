@@ -4,9 +4,98 @@
     <title>Trigger Rally</title>
     <meta name="description" content="Fast arcade rally racing action! Play in your browser with WebGL 3D graphics.">
     <link rel="stylesheet" href="css/unified.css">
+    <style>
+      #rally-boot {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: #f4efe5;
+        background:
+          linear-gradient(135deg, rgba(27, 33, 31, 0.96), rgba(53, 59, 53, 0.92)),
+          #1b211f;
+        font: 600 14px/1.5 Arial, sans-serif;
+        transition: opacity 220ms ease;
+      }
+      #rally-boot.is-ready {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .rally-boot-panel {
+        width: min(440px, 100%);
+        padding: 28px;
+        border: 1px solid rgba(244, 239, 229, 0.22);
+        border-radius: 10px;
+        background: rgba(27, 33, 31, 0.82);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+      }
+      .rally-boot-kicker {
+        color: #f0a43a;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      #rally-boot h1 {
+        margin: 8px 0;
+        font-size: 2rem;
+        line-height: 1;
+      }
+      #rally-boot p {
+        margin: 0;
+        color: rgba(244, 239, 229, 0.76);
+      }
+      .rally-boot-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin-top: 20px;
+        color: #f4efe5;
+      }
+      .rally-boot-controls kbd {
+        padding: 3px 7px;
+        border: 1px solid rgba(244, 239, 229, 0.35);
+        border-radius: 4px;
+        background: #353b35;
+        font: inherit;
+      }
+      #rally-boot-retry {
+        display: none;
+        margin-top: 20px;
+        padding: 9px 15px;
+        border: 0;
+        border-radius: 4px;
+        color: #1b211f;
+        background: #f0a43a;
+        font: 900 14px Arial, sans-serif;
+        cursor: pointer;
+      }
+      #rally-boot[data-state="error"] #rally-boot-retry {
+        display: inline-block;
+      }
+      #rally-boot-retry:focus-visible {
+        outline: 3px solid #8ed8ff;
+        outline-offset: 3px;
+      }
+    </style>
     <!--<link rel="icon" href="/embedded/trigger-rally/favicon.png">-->
   </head>
   <body>
+    <div id="rally-boot" role="status" aria-live="polite">
+      <div class="rally-boot-panel">
+        <div class="rally-boot-kicker">Dustline Rally</div>
+        <h1 id="rally-boot-title">正在准备赛道</h1>
+        <p id="rally-boot-message">首次载入会建立本地赛道缓存，请稍候。</p>
+        <div class="rally-boot-controls" aria-label="操作说明">
+          <span><kbd>WASD</kbd> / 方向键驾驶</span>
+          <span><kbd>Space</kbd> 手刹漂移</span>
+          <span><kbd>R</kbd> 重新开始</span>
+        </div>
+        <button id="rally-boot-retry" type="button">重新载入</button>
+      </div>
+    </div>
     <div id="unified-container"></div><img src="images/icon-128.png" style="display:none" title="Trigger Rally icon">
     <script>
       const launchParams = new URLSearchParams(location.search);
@@ -46,5 +135,54 @@
       };
     </script>
     <script data-main="scripts/main" src="js/require.js"></script>
+    <script>
+      (() => {
+        const boot = document.getElementById("rally-boot");
+        const title = document.getElementById("rally-boot-title");
+        const message = document.getElementById("rally-boot-message");
+        const retry = document.getElementById("rally-boot-retry");
+        const expectsDrive = /\/drive(?:[/?#]|$)/.test(window.__INITIAL_PATH__);
+        let settled = false;
+
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          boot.classList.add("is-ready");
+          setTimeout(() => boot.remove(), 240);
+        };
+
+        const fail = () => {
+          if (settled) return;
+          boot.dataset.state = "error";
+          title.textContent = "赛道载入失败";
+          message.textContent = "请确认浏览器已启用 WebGL，然后重新载入。你的本地进度不会被清除。";
+        };
+
+        const checkReady = () => {
+          const selector = expectsDrive
+            ? ".gui-container.drive"
+            : ".gui-container, canvas";
+          if (document.querySelector(selector)) finish();
+        };
+
+        new MutationObserver(checkReady).observe(
+          document.getElementById("unified-container"),
+          { childList: true, subtree: true }
+        );
+        retry.addEventListener("click", () => location.reload());
+        window.addEventListener("error", event => {
+          if (event.target instanceof HTMLScriptElement ||
+              event.target instanceof HTMLLinkElement) {
+            fail();
+          }
+        }, true);
+        window.addEventListener("unhandledrejection", fail);
+        setTimeout(() => {
+          checkReady();
+          if (!settled) fail();
+        }, 20000);
+        checkReady();
+      })();
+    </script>
   </body>
 </html>

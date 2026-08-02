@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
   const title = "PLAYROOM｜游戏大厅";
   const description =
-    "二十三款网页游戏的统一入口：从黄金矿工、斗地主到接龙、二十一点、极速光轨与尘土拉力，打开大厅马上开玩。";
+    "二十四款网页游戏的统一入口：从黄金矿工、斗地主到星港拾荒局、二十一点、极速光轨与尘土拉力，打开大厅马上开玩。";
 
   return {
     metadataBase: new URL(origin),

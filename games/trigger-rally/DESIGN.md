@@ -30,6 +30,11 @@ components:
   rally-stage:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.primary}"
+  loading-panel:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.primary}"
+    accentColor: "{colors.accent}"
+    borderRadius: "{rounded.md}"
   focus-ring:
     backgroundColor: "{colors.focus}"
     size: 3px
@@ -41,11 +46,11 @@ Preserve Trigger Rally's authored terrain, car handling, stage browser, timing, 
 
 ## Layout
 
-The WebGL stage fills the embedded viewport. Existing garage, track, and result overlays retain their original hierarchy.
+The WebGL stage fills the embedded viewport. Existing garage, track, and result overlays retain their original hierarchy. A compact loading panel explains controls while the local track cache and WebGL scene initialize, then yields to the stage.
 
 ## Accessibility
 
-Keyboard driving remains primary, with visible focus on menus and no additional motion outside the game loop.
+Keyboard driving remains primary, with visible focus on menus and no additional motion outside the game loop. Both WASD and arrow-key controls are supported, and loading failures expose a keyboard-focusable retry action.
 
 ## Do's and Don'ts
 

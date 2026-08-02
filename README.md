@@ -10,7 +10,7 @@
 npm run dev
 ```
 
-访问 `http://localhost:3003`。二十三款游戏均从大厅同源加载；斗地主、匿名夜话、地牢枪手、微型赛车和联机二十一点的实时服务也由大厅进程统一提供。项目只用于本地和局域网运行，不会自动发布到线上。
+访问 `http://localhost:3003`。二十四款游戏均从大厅同源加载；斗地主、匿名夜话、地牢枪手、微型赛车和联机二十一点的实时服务也由大厅进程统一提供。项目只用于本地和局域网运行，不会自动发布到线上。
 
 ## 游戏列表
 
@@ -39,6 +39,7 @@ npm run dev
 | 21 | 经典纸牌 | [`games/js-solitaire`](games/js-solitaire) | 单人 |
 | 22 | 经典二十一点 | [`games/blackjack`](games/blackjack) | 人机 |
 | 23 | 联机二十一点 | [`games/multiplayer-blackjack`](games/multiplayer-blackjack) | 局域网多人 |
+| 24 | 星港拾荒局 | [`games/starport-salvage-idle`](games/starport-salvage-idle) | 放置经营 |
 
 ## 目录约定
 

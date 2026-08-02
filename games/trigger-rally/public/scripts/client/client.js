@@ -779,11 +779,11 @@ void main() {
         this.audio = new clientAudio.Audio();
         if (!prefs.audio) { this.audio.mute(); }
         this.checkpointBuffer = null;
-        this.audio.loadBuffer('/a/sounds/checkpoint.ogg', buffer => { return this.checkpointBuffer = buffer; });
+        this.audio.loadBuffer(window.BASE_PATH + '/a/sounds/checkpoint.ogg', buffer => { return this.checkpointBuffer = buffer; });
         this.kachingBuffer = null;
-        this.audio.loadBuffer('/a/sounds/kaching.ogg', buffer => { return this.kachingBuffer = buffer; });
+        this.audio.loadBuffer(window.BASE_PATH + '/a/sounds/kaching.ogg', buffer => { return this.kachingBuffer = buffer; });
         this.voiceBuffer = null;
-        this.audio.loadBuffer('/a/sounds/voice.ogg', buffer => {
+        this.audio.loadBuffer(window.BASE_PATH + '/a/sounds/voice.ogg', buffer => {
           return this.voiceBuffer = buffer;
         });
           // @speak 'welcome'
@@ -819,6 +819,10 @@ void main() {
             KEYCODE.DOWN,
             KEYCODE.LEFT,
             KEYCODE.RIGHT,
+            KEYCODE.W,
+            KEYCODE.A,
+            KEYCODE.S,
+            KEYCODE.D,
             KEYCODE.SPACE
           ].includes(event.keyCode)) { event.preventDefault(); }
         }

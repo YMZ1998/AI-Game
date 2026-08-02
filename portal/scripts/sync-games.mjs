@@ -134,6 +134,12 @@ const gameCatalog = [
     title: "联机二十一点",
     english: "BLACKJACK ROOMS",
   },
+  {
+    slug: "starport-salvage-idle",
+    number: "24",
+    title: "星港拾荒局",
+    english: "STARPORT SALVAGE",
+  },
 ];
 
 const gameHints = {
@@ -160,6 +166,7 @@ const gameHints = {
   "js-solitaire": "点击可自动移动到首个合法位置；也可以按住牌面拖动整列。",
   blackjack: "选择要牌或停牌，让你的点数尽量接近 21 且不要爆牌。",
   "multiplayer-blackjack": "创建并分享房间号；房主等玩家加入后开始，轮到你时选择要牌或停牌。",
+  "starport-salvage-idle": "点击或按住残骸获取废金属，升级打捞、精炼和物流，并在订单页交付合金。",
 };
 
 async function exists(target) {

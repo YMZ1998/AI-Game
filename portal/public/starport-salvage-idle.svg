@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">星港拾荒局</title>
+  <desc id="desc">无人机围绕星港打捞残骸，精炼炉在远方发出橙色光芒。</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.58" stop-color="#102a43"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+    <linearGradient id="station" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#285371"/>
+      <stop offset="1" stop-color="#10263a"/>
+    </linearGradient>
+    <radialGradient id="forge">
+      <stop offset="0" stop-color="#ffd86b"/>
+      <stop offset=".45" stop-color="#ff9a52"/>
+      <stop offset="1" stop-color="#ff6b43" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="cyanGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="orangeGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse">
+      <path d="M54 0H0V54" fill="none" stroke="#52e6d6" stroke-opacity=".075"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+  <circle cx="974" cy="128" r="128" fill="#52e6d6" opacity=".05"/>
+  <circle cx="975" cy="128" r="82" fill="none" stroke="#52e6d6" stroke-opacity=".18" stroke-width="2"/>
+  <g fill="#9eebff">
+    <circle cx="98" cy="96" r="2"/><circle cx="210" cy="180" r="3"/><circle cx="438" cy="92" r="2"/>
+    <circle cx="730" cy="151" r="2"/><circle cx="1085" cy="244" r="3"/><circle cx="1016" cy="79" r="2"/>
+    <circle cx="341" cy="281" r="2"/><circle cx="825" cy="301" r="2"/>
+  </g>
+
+  <g transform="translate(70 180)">
+    <path d="M0 90L80 35l145 18 34 78-76 74-137-28z" fill="#142131" stroke="#567084" stroke-width="7"/>
+    <path d="M21 92L87 56l110 15 17 39-55 47-98-17z" fill="#213549"/>
+    <path d="M55 59l31-41 18 49m58 5 49-40-12 64" fill="none" stroke="#7892a5" stroke-width="10" stroke-linecap="round"/>
+    <path d="M0 90l71 22 42 72" fill="none" stroke="#52e6d6" stroke-opacity=".65" stroke-width="5"/>
+  </g>
+
+  <g transform="translate(463 330)">
+    <ellipse cx="120" cy="305" rx="355" ry="62" fill="#000" opacity=".38"/>
+    <path d="M-54 193L31 76h331l85 117-37 123H-17z" fill="#0b1928" stroke="#52e6d6" stroke-opacity=".5" stroke-width="4"/>
+    <path d="M17 174l68-73h222l71 73-34 89H44z" fill="url(#station)" stroke="#557b91" stroke-width="8"/>
+    <path d="M60 177h278v78H60z" fill="#07111f"/>
+    <path d="M87 205h224" stroke="#52e6d6" stroke-width="10" stroke-dasharray="34 22" filter="url(#cyanGlow)"/>
+    <path d="M102 101V32h72v69m99 0V-18h55v119" fill="#17344a" stroke="#6e9ab0" stroke-width="7"/>
+    <path d="M127 32l12-50h3l11 50m139-50 8-48h2l8 48" fill="none" stroke="#52e6d6" stroke-width="6" filter="url(#cyanGlow)"/>
+    <circle cx="29" cy="176" r="23" fill="#52e6d6" opacity=".75" filter="url(#cyanGlow)"/>
+    <circle cx="370" cy="176" r="23" fill="#52e6d6" opacity=".75" filter="url(#cyanGlow)"/>
+  </g>
+
+  <g transform="translate(903 303)">
+    <circle cx="68" cy="133" r="112" fill="url(#forge)" opacity=".46" filter="url(#orangeGlow)"/>
+    <path d="M13 203L28 64h79l16 139z" fill="#152638" stroke="#6c8291" stroke-width="7"/>
+    <path d="M45 42h46l17 29H29z" fill="#223a4c"/>
+    <rect x="49" y="91" width="39" height="83" rx="16" fill="#ff9a52" filter="url(#orangeGlow)"/>
+    <path d="M54 161c-23-40 33-51 9-91 45 37 28 67 14 91z" fill="#ffd86b"/>
+    <path d="M32 214h87" stroke="#52e6d6" stroke-width="6" stroke-dasharray="16 9"/>
+  </g>
+
+  <g fill="#17344a" stroke="#52e6d6" stroke-width="5" filter="url(#cyanGlow)">
+    <g transform="translate(331 281) rotate(-8)">
+      <path d="M0 15h72l17 20-17 19H0L-17 35z"/>
+      <circle cx="51" cy="35" r="8" fill="#ffd86b" stroke="none"/>
+      <path d="M-17 35l-33-24m139 24 32-24" fill="none"/>
+    </g>
+    <g transform="translate(810 255) rotate(12) scale(.82)">
+      <path d="M0 15h72l17 20-17 19H0L-17 35z"/>
+      <circle cx="51" cy="35" r="8" fill="#ffd86b" stroke="none"/>
+      <path d="M-17 35l-33-24m139 24 32-24" fill="none"/>
+    </g>
+  </g>
+
+  <g transform="translate(77 621)">
+    <rect width="660" height="116" rx="25" fill="#07111f" fill-opacity=".86" stroke="#52e6d6" stroke-opacity=".4" stroke-width="3"/>
+    <text x="34" y="48" fill="#52e6d6" font-family="Arial,Microsoft YaHei,sans-serif" font-size="22" font-weight="700" letter-spacing="7">STARPORT SALVAGE</text>
+    <text x="31" y="91" fill="#f2f7ff" font-family="Microsoft YaHei,Arial,sans-serif" font-size="41" font-weight="900" letter-spacing="5">星港拾荒局</text>
+  </g>
+  <g transform="translate(929 649)">
+    <rect width="197" height="72" rx="36" fill="#52e6d6"/>
+    <path d="M61 22l30 14-30 14z" fill="#07111f"/>
+    <text x="108" y="45" text-anchor="middle" fill="#07111f" font-family="Arial,sans-serif" font-size="19" font-weight="900">IDLE</text>
+  </g>
+</svg>

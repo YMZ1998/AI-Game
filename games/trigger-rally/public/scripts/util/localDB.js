@@ -3,34 +3,61 @@
 define(['models/index'], function (models) {
 
     var localDB = undefined
+    var databaseUnavailable = false
     const readyCallbacks = []
 
-    const request = indexedDB.open("TriggerRally", 2);
-    request.onsuccess = event => {
-        console.log("opening db")
-        localDB = event.target.result
-        window.__localDB__ = localDB
-
-        _storeInitialTracks()
+    function settleDatabaseUnavailable(error) {
+        if (databaseUnavailable) { return }
+        databaseUnavailable = true
+        console.warn("Trigger Rally progress storage is unavailable; continuing without saves.", error)
         readyCallbacks.splice(0).forEach(callback => callback())
     }
-    request.onerror = event => {
-        console.error("Unable to open Trigger Rally database", event.target.error)
+
+    function openDatabase() {
+        if (!window.indexedDB) {
+            settleDatabaseUnavailable(new Error("IndexedDB is not supported"))
+            return
+        }
+
+        let request
+        try {
+            request = window.indexedDB.open("TriggerRally", 2)
+        } catch (error) {
+            settleDatabaseUnavailable(error)
+            return
+        }
+
+        request.onsuccess = event => {
+            console.log("opening db")
+            localDB = event.target.result
+            window.__localDB__ = localDB
+
+            _storeInitialTracks()
+            readyCallbacks.splice(0).forEach(callback => callback())
+        }
+        request.onerror = event => {
+            settleDatabaseUnavailable(event.target.error)
+        }
+        request.onblocked = () => {
+            settleDatabaseUnavailable(new Error("IndexedDB upgrade was blocked"))
+        }
+
+        request.onupgradeneeded = event => {
+            console.log("upgrading db")
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains("tracks")) {
+                db.createObjectStore("tracks", {keyPath: "id"});
+            }
+            if (!db.objectStoreNames.contains("runs")) {
+                db.createObjectStore("runs", {keyPath: "id"});
+            }
+            if (!db.objectStoreNames.contains("favs")) {
+                db.createObjectStore("favs", {keyPath: "id"});
+            }
+        }
     }
-    
-    request.onupgradeneeded = event => {
-        console.log("upgrading db")
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains("tracks")) {
-            db.createObjectStore("tracks", {keyPath: "id"});
-        }
-        if (!db.objectStoreNames.contains("runs")) {
-            db.createObjectStore("runs", {keyPath: "id"});
-        }
-        if (!db.objectStoreNames.contains("favs")) {
-            db.createObjectStore("favs", {keyPath: "id"});
-        }
-    }
+
+    openDatabase()
 
     function _storeInitialTracks(){
         for (var trackId of ['RF87t6b6', 'uUJTPz6M', 'v3base2']) {
@@ -51,7 +78,7 @@ define(['models/index'], function (models) {
     }
 
     function whenReady(callback) {
-        if (localDB) {
+        if (localDB || databaseUnavailable) {
             callback()
         } else {
             readyCallbacks.push(callback)
@@ -60,6 +87,11 @@ define(['models/index'], function (models) {
 
     function getTrack(trackId, callback) {
         whenReady(() => {
+            if (databaseUnavailable) {
+                fetchTrack(trackId, callback)
+                return
+            }
+
             const req = getStore("tracks", "readonly").get(trackId)
             req.onsuccess = () => {
                 if (req.result) {
@@ -67,17 +99,22 @@ define(['models/index'], function (models) {
                     return
                 }
 
-                const track = models.Track.findOrCreate(trackId)
-                track.fetch({
-                    success: () => {
-                        const trackData = track.toJSON()
+                fetchTrack(trackId, trackData => {
+                    if (trackData) {
                         getStore("tracks", "readwrite").put(trackData)
-                        callback(trackData)
-                    },
-                    error: () => callback(null)
+                    }
+                    callback(trackData)
                 })
             }
             req.onerror = () => callback(null)
+        })
+    }
+
+    function fetchTrack(trackId, callback) {
+        const track = models.Track.findOrCreate(trackId)
+        track.fetch({
+            success: () => callback(track.toJSON()),
+            error: () => callback(null)
         })
     }
 

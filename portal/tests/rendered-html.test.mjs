@@ -23,7 +23,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders all twenty-three game cards", async () => {
+test("server-renders all twenty-four game cards", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -53,7 +53,8 @@ test("server-renders all twenty-three game cards", async () => {
   assert.match(html, /经典纸牌/);
   assert.match(html, /经典二十一点/);
   assert.match(html, /联机二十一点/);
-  assert.match(html, /23(?:<!-- -->)? 款游戏在线/);
+  assert.match(html, /星港拾荒局/);
+  assert.match(html, /24(?:<!-- -->)? 款游戏在线/);
   assert.match(html, /href="\/play\/police-chase\/index\.html"/);
   assert.match(html, /href="\/play\/anonymous-chat\/index\.html"/);
   assert.match(html, /href="\/play\/armor-alley\/index\.html"/);
@@ -65,6 +66,7 @@ test("server-renders all twenty-three game cards", async () => {
   assert.match(html, /href="\/play\/js-solitaire\/index\.html"/);
   assert.match(html, /href="\/play\/blackjack\/index\.html"/);
   assert.match(html, /href="\/play\/multiplayer-blackjack\/index\.html"/);
+  assert.match(html, /href="\/play\/starport-salvage-idle\/index\.html"/);
   assert.match(html, /placeholder="搜索游戏、玩法或标签"/);
   assert.match(html, /aria-label="按类型筛选游戏"/);
   assert.match(html, /class="game-card gold-game"/);
@@ -148,6 +150,7 @@ test("ships every game as a same-origin embedded build", async () => {
     "js-solitaire",
     "blackjack",
     "multiplayer-blackjack",
+    "starport-salvage-idle",
   ];
 
   for (const slug of slugs) {
@@ -480,4 +483,27 @@ test("provides a local-only Doudizhu room server and CSV score ledger", async ()
   assert.match(serverSource, /chooseBotBid/);
   assert.match(serverSource, /scheduleBots/);
   assert.match(serverSource, /message\.type === "play"/);
+});
+
+test("embeds Starport Salvage with its complete idle loop", async () => {
+  const indexSource = await readFile(
+    new URL("../public/embedded/starport-salvage-idle/index.html", import.meta.url),
+    "utf8",
+  );
+  const gameSource = await readFile(
+    new URL("../public/embedded/starport-salvage-idle/game.js", import.meta.url),
+    "utf8",
+  );
+  const styleSource = await readFile(
+    new URL("../public/embedded/starport-salvage-idle/style.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(indexSource, /星港拾荒局/);
+  assert.match(indexSource, /data-batch="max"/);
+  assert.match(gameSource, /starport-salvage-idle:v1/);
+  assert.match(gameSource, /MAX_OFFLINE_SECONDS = 4 \* 60 \* 60/);
+  assert.match(gameSource, /window\.setInterval\(saveState, 10_000\)/);
+  assert.match(gameSource, /function deliverOrder/);
+  assert.match(styleSource, /prefers-reduced-motion/);
 });

@@ -1,0 +1,9 @@
+{
+  "name": "playroom-starport-salvage-idle",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/game.test.mjs",
+    "design:lint": "npx --yes @google/design.md@0.4.0 lint DESIGN.md"
+  }
+}

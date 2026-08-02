@@ -6,7 +6,7 @@ export type GameCatalogItem = {
   description: string;
   image: string;
   tags: string[];
-  kind: "街机" | "棋牌" | "动作" | "射击" | "益智" | "社交" | "竞速" | "联机" | "策略";
+  kind: "街机" | "棋牌" | "动作" | "射击" | "益智" | "社交" | "竞速" | "联机" | "策略" | "放置";
   className: string;
 };
 
@@ -264,6 +264,17 @@ export const games: GameCatalogItem[] = [
     tags: ["棋牌", "局域网", "多人"],
     kind: "联机",
     className: "multiplayer-blackjack-game",
+  },
+  {
+    number: "24",
+    slug: "starport-salvage-idle",
+    title: "星港拾荒局",
+    english: "STARPORT SALVAGE",
+    description: "点击打捞残骸，调度无人机与熔炉，把废金属变成合金并完成订单，离线时星港也会持续运转。",
+    image: "/starport-salvage-idle.svg",
+    tags: ["放置", "经营", "离线收益"],
+    kind: "放置",
+    className: "starport-idle-game",
   },
 ];
 

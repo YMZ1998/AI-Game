@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { GameCatalogItem } from "./game-catalog";
 
-const kinds = ["全部", "街机", "棋牌", "动作", "射击", "益智", "策略", "竞速", "联机", "社交"] as const;
+const kinds = ["全部", "街机", "棋牌", "动作", "射击", "益智", "策略", "竞速", "联机", "社交", "放置"] as const;
 const warmedGames = new Set<string>();
 
 function warmGame(slug: string) {

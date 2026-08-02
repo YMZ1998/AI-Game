@@ -42,7 +42,7 @@ export default function Home() {
         </div>
         <div className="hero-bottom">
           <p>
-            二十三款随时开玩的小游戏，
+            二十四款随时开玩的小游戏，
             <br />
             一个入口，点开就玩。
           </p>
