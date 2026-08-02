@@ -505,5 +505,7 @@ test("embeds Starport Salvage with its complete idle loop", async () => {
   assert.match(gameSource, /MAX_OFFLINE_SECONDS = 4 \* 60 \* 60/);
   assert.match(gameSource, /window\.setInterval\(saveState, 10_000\)/);
   assert.match(gameSource, /function deliverOrder/);
+  assert.match(gameSource, /function revealPanel/);
+  assert.match(gameSource, /scrollIntoView/);
   assert.match(styleSource, /prefers-reduced-motion/);
 });

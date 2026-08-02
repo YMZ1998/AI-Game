@@ -354,13 +354,15 @@ function salvageOnce() {
   const amount = calculateRates(state).clickYield;
   state.resources.scrap += amount;
   state.tutorial.taps = Math.min(3, state.tutorial.taps + 1);
-  if (state.tutorial.step === 0 && state.tutorial.taps >= 3) state.tutorial.step = 1;
+  const reachedUpgradeStep = state.tutorial.step === 0 && state.tutorial.taps >= 3;
+  if (reachedUpgradeStep) state.tutorial.step = 1;
   dom.wreck.classList.remove("is-tapped");
   void dom.wreck.offsetWidth;
   dom.wreck.classList.add("is-tapped");
   spawnFloat(amount);
   playTone(135 + Math.random() * 35, 0.045, "square", 0.025);
   render();
+  if (reachedUpgradeStep) revealPanel("starport");
 }
 
 function stopSalvageHold() {
@@ -401,7 +403,7 @@ function purchaseUpgrade(type) {
     state.tutorial.observationStartedAt = Date.now();
   } else if (state.tutorial.step === 3 && type === "refinery") {
     state.tutorial.step = 4;
-    switchView("orders");
+    switchView("orders", true);
   }
 
   playTone(440, 0.12, "triangle", 0.04);
@@ -484,7 +486,17 @@ function refreshOrders() {
   render(true);
 }
 
-function switchView(view) {
+function revealPanel(view) {
+  const panel = view === "orders" ? dom["orders-view"] : dom["starport-view"];
+  window.requestAnimationFrame(() => {
+    panel.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+  });
+}
+
+function switchView(view, reveal = false) {
   const isOrders = view === "orders";
   dom["starport-view"].hidden = isOrders;
   dom["orders-view"].hidden = !isOrders;
@@ -496,6 +508,7 @@ function switchView(view) {
   dom["nav-orders"].setAttribute("aria-selected", String(isOrders));
   dom["nav-starport"].setAttribute("aria-pressed", String(!isOrders));
   dom["nav-orders"].setAttribute("aria-pressed", String(isOrders));
+  if (reveal) revealPanel(view);
 }
 
 function renderDrones() {
@@ -612,6 +625,7 @@ function renderTutorial(now) {
     state.tutorial.step = 3;
     saveState();
     render(true);
+    revealPanel("starport");
   }
 }
 
@@ -694,8 +708,8 @@ function bindEvents() {
   });
 
   dom["refresh-orders"].addEventListener("click", refreshOrders);
-  dom["nav-starport"].addEventListener("click", () => switchView("starport"));
-  dom["nav-orders"].addEventListener("click", () => switchView("orders"));
+  dom["nav-starport"].addEventListener("click", () => switchView("starport", true));
+  dom["nav-orders"].addEventListener("click", () => switchView("orders", true));
   dom["tutorial-skip"].addEventListener("click", () => {
     state.tutorial.step = 5;
     dom["tutorial-tip"].classList.add("is-complete");
@@ -756,9 +770,18 @@ function boot() {
   const offline = calculateOfflineReward(state, Date.now());
   state.lastSavedAt = Date.now();
   bindEvents();
-  switchView("starport");
+  if (state.tutorial.step === 4) {
+    switchView("orders");
+  } else {
+    switchView("starport");
+  }
   render(true);
   presentOfflineReward(offline);
+  if ([1, 3].includes(state.tutorial.step)) {
+    window.setTimeout(() => revealPanel("starport"), 80);
+  } else if (state.tutorial.step === 4) {
+    window.setTimeout(() => revealPanel("orders"), 80);
+  }
   window.setInterval(saveState, 10_000);
   window.requestAnimationFrame(gameLoop);
 }
