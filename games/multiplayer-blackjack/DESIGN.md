@@ -34,6 +34,10 @@ components:
   card:
     backgroundColor: "{colors.primary}"
     rounded: "{rounded.sm}"
+  turn-timer:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.sm}"
 ---
 
 ## Overview
@@ -46,7 +50,7 @@ Create or join a room, wait for the host, take hit-or-stand turns, compare hands
 
 ## Social Play
 
-Room codes make joining explicit. Turn ownership, connected players, and results remain visible to everyone at the table.
+Room codes make joining explicit. Turn ownership, the remaining action time, connected or reconnecting players, and results remain visible to everyone at the table. A dropped connection keeps the player's seat briefly and restores the full hand when they return.
 
 ## Accessibility
 

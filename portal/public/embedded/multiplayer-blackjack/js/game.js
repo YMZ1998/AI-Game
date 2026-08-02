@@ -3,7 +3,16 @@ const username = String(query.username || '').trim().slice(0, 16);
 const roomid = String(query.roomid || '').trim().toUpperCase().slice(0, 12);
 const bidamt = Math.max(1, Math.min(9999, Number(query.bidamt) || 100));
 const type = query.type === '1' ? '1' : '0';
-const isHost = type === '1';
+let isHost = type === '1';
+const reconnectStorageKey = 'blackjack-room:' + roomid + ':' + username;
+let reconnectToken = sessionStorage.getItem(reconnectStorageKey);
+if (!reconnectToken) {
+  reconnectToken = (
+    globalThis.crypto?.randomUUID?.().replaceAll('-', '') ||
+    Math.random().toString(36).slice(2) + Date.now().toString(36)
+  ).slice(0, 64);
+  sessionStorage.setItem(reconnectStorageKey, reconnectToken);
+}
 const socketPath = location.pathname.startsWith('/embedded/')
   ? '/multiplayer-blackjack-service/socket.io'
   : '/socket.io';
@@ -17,6 +26,9 @@ const socket = io({
 
 let dealerCardCount = 0;
 let gameHasStarted = false;
+let turnDeadline = 0;
+let turnOwnerToken = '';
+let turnOwnerName = '';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -54,6 +66,7 @@ function outputUsers(users) {
   content += users.map(user =>
     '<li class="list-group-item d-flex justify-content-between align-items-center">' +
     escapeHtml(user.username) +
+    (user.connected ? '' : ' <small>（重连中）</small>') +
     '<span class="badge badge-primary badge-pill">' + escapeHtml(user.bidamt) + ' 分</span></li>'
   ).join('');
   $('.list-group').html(content);
@@ -75,7 +88,13 @@ function startGame() {
 
 socket.on('connect', function () {
   setConnection('已连接', 'is-online');
-  socket.emit('joinRoom', { username, roomid, bidamt, type });
+  socket.emit('joinRoom', {
+    username,
+    roomid,
+    bidamt,
+    type,
+    reconnectToken
+  });
 });
 
 socket.on('disconnect', function () {
@@ -141,18 +160,45 @@ socket.on('gameStarted', function () {
   setTurnStatus('正在发牌…');
 });
 
+socket.on('reconnected', function () {
+  setConnection('已重新连接', 'is-online');
+  appendMessage('已回到原座位，牌局状态已恢复。');
+});
+
+socket.on('host-changed', function (data) {
+  isHost = data.playerToken === reconnectToken;
+  appendMessage(isHost ? '你已成为新房主。' : data.name + ' 已成为新房主。');
+  if (isHost && !gameHasStarted) $('#startBtnContainer').removeClass('d-none');
+});
+
 socket.on('list-of-users', function (data) {
   $('#players').html(data.map(player => '<b>' + escapeHtml(player.name) + '</b>').join('、'));
 });
 
 socket.on('turn-status', function (data) {
-  setTurnStatus(data.socket === socket.id ? '轮到你了：请选择要牌或停牌' : '等待 ' + data.name + ' 操作');
+  turnDeadline = Number(data.deadline) || 0;
+  turnOwnerToken = data.playerToken || '';
+  turnOwnerName = data.name || '';
+  updateTurnCountdown();
 });
 
 socket.on('user-turn', function (turn) {
   $('#hit, #stand').prop('disabled', !turn);
   if (turn) setTurnStatus('轮到你了：请选择要牌或停牌');
 });
+
+function updateTurnCountdown() {
+  if (!turnDeadline || !turnOwnerName) return;
+  const seconds = Math.max(0, Math.ceil((turnDeadline - Date.now()) / 1000));
+  const ownTurn = turnOwnerToken === reconnectToken;
+  setTurnStatus(
+    ownTurn
+      ? '轮到你了：请选择要牌或停牌（' + seconds + ' 秒）'
+      : '等待 ' + turnOwnerName + ' 操作（' + seconds + ' 秒）'
+  );
+}
+
+setInterval(updateTurnCountdown, 250);
 
 socket.on('score', function (score) {
   let label = '你的点数：' + score;
@@ -219,6 +265,9 @@ socket.on('empty-deck', function () {
 });
 
 socket.on('gameOver', function () {
+  turnDeadline = 0;
+  turnOwnerToken = '';
+  turnOwnerName = '';
   $('#hit, #stand').prop('disabled', true);
   setTurnStatus('本局结束');
   if (isHost) $('#new-round').removeClass('d-none');

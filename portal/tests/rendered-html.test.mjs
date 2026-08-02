@@ -345,7 +345,6 @@ test("provides Micro Racing behind the shared portal port", async () => {
     new URL("../vite.config.ts", import.meta.url),
     "utf8",
   );
-
   assert.match(serverSource, /"micro-racing"/);
   assert.match(serverSource, /"server\.js"/);
   assert.match(serverSource, /MICRO_RACING_INTERNAL_PORT/);
@@ -385,6 +384,13 @@ test("provides Multiplayer Blackjack behind the shared portal port", async () =>
     new URL("../vite.config.ts", import.meta.url),
     "utf8",
   );
+  const gameServerSource = await readFile(
+    new URL(
+      "../../games/multiplayer-blackjack/server.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   assert.match(serverSource, /multiplayer-blackjack/);
   assert.match(serverSource, /server\.js/);
@@ -402,6 +408,11 @@ test("provides Multiplayer Blackjack behind the shared portal port", async () =>
   );
   assert.match(clientSource, /transports:\s*\['polling'\]/);
   assert.match(clientSource, /upgrade:\s*false/);
+  assert.match(clientSource, /reconnectToken/);
+  assert.match(clientSource, /updateTurnCountdown/);
+  assert.match(gameServerSource, /RECONNECT_GRACE_MS/);
+  assert.match(gameServerSource, /操作超时/);
+  assert.match(gameServerSource, /cleanupRooms/);
 });
 
 test("provides a local TOSIOS room process behind the portal proxy", async () => {
