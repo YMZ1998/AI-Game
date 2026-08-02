@@ -79,6 +79,12 @@ components:
     typography: "{typography.label-caps}"
     rounded: "{rounded.md}"
     padding: 12px
+  online-room:
+    backgroundColor: "{colors.surface-muted}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label-caps}"
+    rounded: "{rounded.md}"
+    padding: 12px
   reward-badge:
     backgroundColor: "{colors.reward}"
     textColor: "{colors.primary}"
@@ -126,7 +132,9 @@ Primary actions use cyan pills; competitive states use pink; rewards use gold. P
 
 Power-up status uses compact pill chips over the playfield. Every chip combines a label with a countdown or action key so color is never the only status signal.
 
-Local-versus mode uses a two-option segmented selector. The active mode uses the pink competitive accent, while player status cards always pair cyan/pink markers with explicit P1/P2 labels and control text so team identity never depends on color alone.
+The mode selector exposes solo, local-versus, and online-room play as three equal choices. The active mode uses the pink competitive accent, while player status cards always pair cyan/pink markers with explicit P1/P2 labels and control text so team identity never depends on color alone.
+
+Online-room setup uses a compact pale panel with a text room code, explicit connection status, and cyan primary action. It must remain usable at phone width and never communicate connection health by color alone.
 
 ## Do's and Don'ts
 

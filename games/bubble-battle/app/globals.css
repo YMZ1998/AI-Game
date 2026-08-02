@@ -571,7 +571,7 @@ button:focus-visible {
 }
 
 .overlay-card {
-  width: min(490px, 92%);
+  width: min(540px, 94%);
   padding: clamp(27px, 4vw, 44px);
   border: 4px solid rgba(255, 255, 255, 0.78);
   border-radius: 24px;
@@ -613,9 +613,9 @@ button:focus-visible {
 }
 
 .mode-selector {
-  width: min(330px, 100%);
+  width: min(430px, 100%);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   margin: 0 auto 18px;
   padding: 5px;
@@ -642,6 +642,88 @@ button:focus-visible {
 }
 
 .mode-selector button:focus-visible {
+  outline: 4px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.online-room-panel {
+  width: min(430px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  margin: 0 auto 20px;
+}
+
+.online-room-panel input {
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 15px;
+  border: 2px solid rgba(11, 94, 137, 0.16);
+  border-radius: 12px;
+  color: var(--navy);
+  background: white;
+  font: 900 13px Arial;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.online-room-panel button {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.online-room-panel button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.room-primary {
+  color: var(--navy);
+  background: var(--aqua);
+  box-shadow: 0 4px 0 #1594b3;
+}
+
+.room-secondary {
+  color: var(--navy);
+  background: #e8f7ff;
+  box-shadow: inset 0 0 0 2px rgba(11, 94, 137, 0.1);
+}
+
+.room-code {
+  min-height: 58px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  padding: 8px 15px;
+  border: 2px solid rgba(11, 94, 137, 0.12);
+  border-radius: 12px;
+  background: #e8f7ff;
+}
+
+.room-code span {
+  color: #4d8fae;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.room-code strong {
+  color: var(--navy);
+  font-size: 25px;
+  letter-spacing: 0.18em;
+}
+
+.online-room-panel:has(.room-code) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.online-room-panel input:focus-visible,
+.online-room-panel button:focus-visible {
   outline: 4px solid var(--blue);
   outline-offset: 2px;
 }
@@ -946,6 +1028,23 @@ kbd {
 
   .overlay-card {
     padding: 25px 18px;
+  }
+
+  .mode-selector {
+    gap: 4px;
+  }
+
+  .mode-selector button {
+    padding-inline: 5px;
+    font-size: 10px;
+  }
+
+  .online-room-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .online-room-panel input {
+    grid-column: 1 / -1;
   }
 
   .overlay-card h2 {

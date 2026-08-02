@@ -354,6 +354,28 @@ test("provides Micro Racing behind the shared portal port", async () => {
   assert.match(viteSource, /ws: true/);
 });
 
+test("provides Bubble Battle rooms behind the shared portal port", async () => {
+  const serverSource = await readFile(
+    new URL("../lan/bubble-battle-server.ts", import.meta.url),
+    "utf8",
+  );
+  const viteSource = await readFile(
+    new URL("../vite.config.ts", import.meta.url),
+    "utf8",
+  );
+  const embeddedSource = await readFile(
+    new URL("../public/embedded/bubble-battle/index.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serverSource, /bubble-battle/);
+  assert.match(serverSource, /server\.mjs/);
+  assert.match(serverSource, /BUBBLE_BATTLE_INTERNAL_PORT/);
+  assert.match(viteSource, /bubbleBattleServer/);
+  assert.match(viteSource, /"\/bubble-battle-service"/);
+  assert.match(embeddedSource, /在线房间/);
+});
+
 test("provides Multiplayer Blackjack behind the shared portal port", async () => {
   const serverSource = await readFile(
     new URL("../lan/multiplayer-blackjack-server.ts", import.meta.url),

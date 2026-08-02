@@ -22,9 +22,24 @@ const HEIGHT = ROWS * TILE;
 const ROUND_SECONDS = 120;
 
 type Status = "ready" | "playing" | "levelComplete" | "gameOver";
-type GameMode = "solo" | "versus";
+type GameMode = "solo" | "versus" | "online";
 type Winner = "player1" | "player2" | "draw" | null;
 type Direction = "up" | "down" | "left" | "right";
+type NetworkRole = "host" | "guest";
+type NetworkStatus =
+  | "idle"
+  | "connecting"
+  | "waiting"
+  | "playing"
+  | "disconnected"
+  | "error";
+type NetworkSession = {
+  roomCode: string;
+  token: string;
+  role: NetworkRole;
+  status: NetworkStatus;
+  error: string;
+};
 type PowerType =
   | "speed"
   | "range"
@@ -161,6 +176,18 @@ const powerVisuals: Record<PowerType, { color: string; symbol: string }> = {
   heal: { color: "#ff4567", symbol: "♥" },
 };
 
+const emptyNetworkSession: NetworkSession = {
+  roomCode: "",
+  token: "",
+  role: "host",
+  status: "idle",
+  error: "",
+};
+
+function isDuelMode(mode: GameMode) {
+  return mode === "versus" || mode === "online";
+}
+
 function tileCenter(tile: number) {
   return tile * TILE + TILE / 2;
 }
@@ -218,9 +245,9 @@ function createRuntime(
     board: buildMap(level),
     player: makeActor(1, 1, "#25a9ff", 172),
     player2:
-      mode === "versus" ? makeActor(13, 9, "#ff5e7d", 172) : null,
+      isDuelMode(mode) ? makeActor(13, 9, "#ff5e7d", 172) : null,
     player1Alive: true,
-    player2Alive: mode === "versus",
+    player2Alive: isDuelMode(mode),
     enemies:
       mode === "solo"
         ? enemySpawns
@@ -242,7 +269,7 @@ function createRuntime(
     score,
     lives,
     timeLeft:
-      mode === "versus"
+      isDuelMode(mode)
         ? 90
         : Math.max(75, ROUND_SECONDS - (level - 1) * 8),
     bombRange: 2,
@@ -925,7 +952,7 @@ function drawScene(context: CanvasRenderingContext2D, runtime: Runtime) {
       runtime.invulnerable > 0,
       runtime.shield,
       false,
-      runtime.mode === "versus" ? "P1" : undefined,
+      isDuelMode(runtime.mode) ? "P1" : undefined,
     );
   }
   if (runtime.player2 && runtime.player2Alive) {
@@ -954,8 +981,16 @@ export default function Home() {
   const animationRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
   const mutedRef = useRef(false);
+  const remoteKeysRef = useRef<Set<string>>(new Set());
+  const remoteBombSequenceRef = useRef(0);
+  const localBombSequenceRef = useRef(0);
+  const networkRef = useRef<NetworkSession>(emptyNetworkSession);
   const [muted, setMuted] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>("solo");
+  const [roomInput, setRoomInput] = useState("");
+  const [network, setNetwork] = useState<NetworkSession>(
+    emptyNetworkSession,
+  );
   const [bestScore, setBestScore] = useState(0);
   const [hud, setHud] = useState<Hud>({
     status: "ready",
@@ -1010,6 +1045,38 @@ export default function Home() {
     });
   }, []);
 
+  const updateNetwork = useCallback(
+    (next: NetworkSession | ((current: NetworkSession) => NetworkSession)) => {
+      setNetwork((current) => {
+        const value = typeof next === "function" ? next(current) : next;
+        networkRef.current = value;
+        if (value.status === "idle") {
+          sessionStorage.removeItem("bubble-battle-room");
+        } else {
+          sessionStorage.setItem("bubble-battle-room", JSON.stringify(value));
+        }
+        return value;
+      });
+    },
+    [],
+  );
+
+  const requestRoom = useCallback(async (path: string, body = {}) => {
+    const response = await fetch(`/bubble-battle-service${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const result = (await response.json()) as {
+      error?: string;
+      roomCode?: string;
+      token?: string;
+      role?: NetworkRole;
+    };
+    if (!response.ok) throw new Error(result.error || "联机服务暂时不可用");
+    return result;
+  }, []);
+
   const playTone = useCallback(
     (frequency: number, duration = 0.08, type: OscillatorType = "sine") => {
       if (mutedRef.current) return;
@@ -1051,6 +1118,13 @@ export default function Home() {
   }, []);
 
   const resetGame = useCallback(() => {
+    if (
+      selectedMode === "online" &&
+      networkRef.current.status !== "idle" &&
+      networkRef.current.role === "guest"
+    ) {
+      return;
+    }
     runtimeRef.current = createRuntime(1, 0, 3, selectedMode);
     runtimeRef.current.status = "playing";
     keysRef.current.clear();
@@ -1061,12 +1135,100 @@ export default function Home() {
   const selectMode = useCallback(
     (mode: GameMode) => {
       setSelectedMode(mode);
+      if (mode !== "online") updateNetwork(emptyNetworkSession);
       runtimeRef.current = createRuntime(1, 0, 3, mode);
       keysRef.current.clear();
+      remoteKeysRef.current.clear();
       syncHud();
     },
-    [syncHud],
+    [syncHud, updateNetwork],
   );
+
+  const createOnlineRoom = useCallback(async () => {
+    setSelectedMode("online");
+    runtimeRef.current = createRuntime(1, 0, 3, "online");
+    syncHud();
+    updateNetwork({
+      ...emptyNetworkSession,
+      status: "connecting",
+    });
+    try {
+      const result = await requestRoom("/rooms");
+      const session: NetworkSession = {
+        roomCode: result.roomCode || "",
+        token: result.token || "",
+        role: "host",
+        status: "waiting",
+        error: "",
+      };
+      updateNetwork(session);
+      setRoomInput(session.roomCode);
+    } catch (error) {
+      updateNetwork({
+        ...emptyNetworkSession,
+        status: "error",
+        error: error instanceof Error ? error.message : "创建房间失败",
+      });
+    }
+  }, [requestRoom, syncHud, updateNetwork]);
+
+  const joinOnlineRoom = useCallback(async () => {
+    const roomCode = roomInput
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z2-9]/g, "")
+      .slice(0, 5);
+    if (roomCode.length !== 5) {
+      updateNetwork({
+        ...emptyNetworkSession,
+        status: "error",
+        error: "请输入 5 位房间号",
+      });
+      return;
+    }
+    setSelectedMode("online");
+    runtimeRef.current = createRuntime(1, 0, 3, "online");
+    syncHud();
+    updateNetwork({
+      ...emptyNetworkSession,
+      roomCode,
+      role: "guest",
+      status: "connecting",
+    });
+    try {
+      const result = await requestRoom(`/rooms/${roomCode}/join`);
+      updateNetwork({
+        roomCode,
+        token: result.token || "",
+        role: "guest",
+        status: "waiting",
+        error: "",
+      });
+    } catch (error) {
+      updateNetwork({
+        ...emptyNetworkSession,
+        roomCode,
+        role: "guest",
+        status: "error",
+        error: error instanceof Error ? error.message : "加入房间失败",
+      });
+    }
+  }, [requestRoom, roomInput, syncHud, updateNetwork]);
+
+  const leaveOnlineRoom = useCallback(() => {
+    const current = networkRef.current;
+    if (current.token && current.roomCode) {
+      fetch(`/bubble-battle-service/rooms/${current.roomCode}`, {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token: current.token }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+    updateNetwork(emptyNetworkSession);
+    setRoomInput("");
+    selectMode("solo");
+  }, [selectMode, updateNetwork]);
 
   const nextLevel = useCallback(() => {
     const current = runtimeRef.current;
@@ -1157,6 +1319,19 @@ export default function Home() {
     syncHud();
   }, [playTone, syncHud]);
 
+  const placeLocalBomb = useCallback(() => {
+    const session = networkRef.current;
+    if (
+      runtimeRef.current.mode === "online" &&
+      session.status !== "idle" &&
+      session.role === "guest"
+    ) {
+      localBombSequenceRef.current += 1;
+      return;
+    }
+    placeBomb(1);
+  }, [placeBomb]);
+
   const explodeBomb = useCallback(
     (runtime: Runtime, bomb: Bomb) => {
       const cells: Array<[number, number]> = [[bomb.col, bomb.row]];
@@ -1223,7 +1398,7 @@ export default function Home() {
 
       const playerCol = Math.floor(runtime.player.x / TILE);
       const playerRow = Math.floor(runtime.player.y / TILE);
-      if (runtime.mode === "versus") {
+      if (isDuelMode(runtime.mode)) {
         let playerHit = false;
         if (
           runtime.player1Alive &&
@@ -1262,8 +1437,149 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const saved = sessionStorage.getItem("bubble-battle-room");
+    if (!saved) return;
+    try {
+      const session = JSON.parse(saved) as NetworkSession;
+      if (
+        !session.roomCode ||
+        !session.token ||
+        !["host", "guest"].includes(session.role)
+      ) {
+        throw new Error("invalid saved room");
+      }
+      setSelectedMode("online");
+      setRoomInput(session.roomCode);
+      runtimeRef.current = createRuntime(1, 0, 3, "online");
+      updateNetwork({ ...session, status: "connecting", error: "" });
+      syncHud();
+    } catch {
+      sessionStorage.removeItem("bubble-battle-room");
+    }
+  }, [syncHud, updateNetwork]);
+
+  useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+
+  useEffect(() => {
+    if (!network.token || !network.roomCode || selectedMode !== "online") {
+      return;
+    }
+
+    let stopped = false;
+    let syncing = false;
+    let failures = 0;
+    const syncRoom = async () => {
+      if (stopped || syncing) return;
+      syncing = true;
+      const session = networkRef.current;
+      try {
+        const payload =
+          session.role === "host"
+            ? { token: session.token, state: runtimeRef.current }
+            : {
+                token: session.token,
+                input: {
+                  keys: [...keysRef.current],
+                  bombSequence: localBombSequenceRef.current,
+                },
+              };
+        const response = await fetch(
+          `/bubble-battle-service/rooms/${session.roomCode}/sync`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+            cache: "no-store",
+          },
+        );
+        const result = (await response.json()) as {
+          error?: string;
+          opponentJoined?: boolean;
+          opponentConnected?: boolean;
+          state?: Runtime;
+          input?: { keys?: string[]; bombSequence?: number };
+        };
+        if (!response.ok) throw new Error(result.error || "同步失败");
+        failures = 0;
+
+        if (session.role === "host") {
+          remoteKeysRef.current = new Set(result.input?.keys || []);
+          const nextBombSequence = result.input?.bombSequence || 0;
+          if (nextBombSequence > remoteBombSequenceRef.current) {
+            remoteBombSequenceRef.current = nextBombSequence;
+            placeBomb(2);
+          }
+
+          const nextStatus: NetworkStatus = !result.opponentJoined
+            ? "waiting"
+            : result.opponentConnected
+              ? "playing"
+              : "disconnected";
+          if (
+            nextStatus === "playing" &&
+            runtimeRef.current.status === "ready"
+          ) {
+            runtimeRef.current.status = "playing";
+            playTone(520, 0.12, "triangle");
+            syncHud();
+          }
+          if (networkRef.current.status !== nextStatus) {
+            updateNetwork((current) => ({
+              ...current,
+              status: nextStatus,
+              error: "",
+            }));
+          }
+        } else {
+          if (result.state) {
+            runtimeRef.current = result.state;
+            syncHud();
+          }
+          const nextStatus: NetworkStatus = !result.opponentConnected
+            ? "disconnected"
+            : result.state?.status === "playing"
+              ? "playing"
+              : "waiting";
+          if (networkRef.current.status !== nextStatus) {
+            updateNetwork((current) => ({
+              ...current,
+              status: nextStatus,
+              error: "",
+            }));
+          }
+        }
+      } catch (error) {
+        failures += 1;
+        if (failures >= 3) {
+          remoteKeysRef.current.clear();
+          updateNetwork((current) => ({
+            ...current,
+            status: "error",
+            error: error instanceof Error ? error.message : "联机同步中断",
+          }));
+        }
+      } finally {
+        syncing = false;
+      }
+    };
+
+    syncRoom();
+    const interval = window.setInterval(syncRoom, 80);
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+    };
+  }, [
+    network.roomCode,
+    network.token,
+    placeBomb,
+    playTone,
+    selectedMode,
+    syncHud,
+    updateNetwork,
+  ]);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
@@ -1284,7 +1600,8 @@ export default function Home() {
       const runtime = runtimeRef.current;
       if (
         event.code === "Enter" &&
-        runtime.status === "ready"
+        runtime.status === "ready" &&
+        runtime.mode !== "online"
       ) {
         resetGame();
         return;
@@ -1293,6 +1610,14 @@ export default function Home() {
       if (runtime.mode === "versus") {
         if (event.code === "Space" || event.code === "KeyF") placeBomb(1);
         if (event.code === "Enter") placeBomb(2);
+      } else if (runtime.mode === "online") {
+        if (
+          event.code === "Space" ||
+          event.code === "KeyF" ||
+          event.code === "Enter"
+        ) {
+          placeLocalBomb();
+        }
       } else {
         if (event.code === "Space") placeBomb(1);
         if (event.code === "KeyE") detonateRemote();
@@ -1308,7 +1633,7 @@ export default function Home() {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [detonateRemote, placeBomb, resetGame]);
+  }, [detonateRemote, placeBomb, placeLocalBomb, resetGame]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1325,7 +1650,12 @@ export default function Home() {
       );
       runtime.lastTime = timestamp;
 
-      if (runtime.status === "playing") {
+      const onlineGuest =
+        runtime.mode === "online" &&
+        networkRef.current.status !== "idle" &&
+        networkRef.current.role === "guest";
+
+      if (runtime.status === "playing" && !onlineGuest) {
         runtime.timeLeft -= delta;
         runtime.invulnerable = Math.max(0, runtime.invulnerable - delta);
         runtime.freezeTimer = Math.max(0, runtime.freezeTimer - delta);
@@ -1342,15 +1672,15 @@ export default function Home() {
           );
         }
         if (
-          runtime.mode === "versus" &&
+          isDuelMode(runtime.mode) &&
           runtime.player2 &&
           runtime.player2Alive
         ) {
           moveControlledActor(
             runtime,
             runtime.player2,
-            keys,
-            playerTwoControls,
+            runtime.mode === "online" ? remoteKeysRef.current : keys,
+            runtime.mode === "online" ? soloControls : playerTwoControls,
             delta,
           );
         }
@@ -1452,7 +1782,7 @@ export default function Home() {
         });
 
         if (
-          runtime.mode === "versus" &&
+          isDuelMode(runtime.mode) &&
           (!runtime.player1Alive ||
             !runtime.player2Alive ||
             runtime.timeLeft <= 0)
@@ -1529,30 +1859,64 @@ export default function Home() {
       : hud.winner === "player2"
         ? "P2 获胜！"
         : "本局平手！";
+  const networkInterrupted =
+    hud.mode === "online" &&
+    hud.status === "playing" &&
+    network.status !== "playing";
   const overlayTitle =
-    hud.status === "ready"
-      ? hud.mode === "versus"
-        ? "双人对战！"
-        : "水花开战！"
+    networkInterrupted
+      ? network.status === "error"
+        ? "联机同步中断"
+        : "等待玩家重连"
+      : hud.status === "ready"
+      ? hud.mode === "online"
+        ? network.status === "connecting"
+          ? "正在连接…"
+          : network.status === "waiting"
+            ? network.role === "host"
+              ? "等待 P2 加入"
+              : "等待房主开局"
+            : network.status === "disconnected"
+              ? "等待玩家重连"
+              : network.status === "error"
+                ? "联机失败"
+                : "在线对战！"
+        : hud.mode === "versus"
+          ? "双人对战！"
+          : "水花开战！"
       : hud.status === "levelComplete"
         ? "清场成功！"
-        : hud.mode === "versus"
+        : isDuelMode(hud.mode)
           ? versusResult
           : "泡泡破了";
   const overlayCopy =
-    hud.status === "ready"
-      ? hud.mode === "versus"
-        ? "P1 使用 WASD 移动、F 放泡泡；P2 使用方向键移动、Enter 放泡泡。最后留在场上的玩家获胜！"
-        : "穿过水上街区，放下泡泡困住捣蛋怪。小心，自己的水花也会伤到你！"
+    networkInterrupted
+      ? network.error ||
+        `房间 ${network.roomCode} 会保留当前对局，对方在 10 秒内返回即可继续。`
+      : hud.status === "ready"
+      ? hud.mode === "online"
+        ? network.error ||
+          (network.roomCode
+            ? `房间 ${network.roomCode} · 双方都可以使用 WASD、方向键和空格键。断线后 10 秒内可自动重连。`
+            : "创建房间并把 5 位房间号发给另一位玩家，或输入房间号加入现有对局。")
+        : hud.mode === "versus"
+          ? "P1 使用 WASD 移动、F 放泡泡；P2 使用方向键移动、Enter 放泡泡。最后留在场上的玩家获胜！"
+          : "穿过水上街区，放下泡泡困住捣蛋怪。小心，自己的水花也会伤到你！"
       : hud.status === "levelComplete"
         ? `第 ${hud.level} 区已经恢复清凉，下一片街区会更热闹。`
-        : hud.mode === "versus"
+        : isDuelMode(hud.mode)
           ? hud.winner === "draw"
             ? "双方同时被水花击中，或者倒计时结束仍未分出胜负。再来一局！"
             : "漂亮的路线封锁！换个出生点思路，再来一场对决。"
         : hud.timeLeft <= 0
           ? "时间到！再来一局，找准路线连续引爆。"
           : "别被水花包围。记住先留好退路，再放泡泡！";
+  const showOverlay =
+    hud.status !== "playing" ||
+    (hud.mode === "online" &&
+      ["connecting", "waiting", "disconnected", "error"].includes(
+        network.status,
+      ));
 
   return (
     <main className="page-shell">
@@ -1578,9 +1942,13 @@ export default function Home() {
               <strong>{String(hud.level).padStart(2, "0")}</strong>
             </div>
             <div>
-              <span>{hud.mode === "versus" ? "对战状态" : "捣蛋怪"}</span>
+              <span>{isDuelMode(hud.mode) ? "对战状态" : "捣蛋怪"}</span>
               <strong>
-                {hud.mode === "versus" ? "P1 VS P2" : hud.enemies}
+                {isDuelMode(hud.mode)
+                  ? hud.mode === "online"
+                    ? network.roomCode || "联机"
+                    : "P1 VS P2"
+                  : hud.enemies}
               </strong>
             </div>
             <div className={hud.timeLeft <= 15 ? "danger" : ""}>
@@ -1602,14 +1970,16 @@ export default function Home() {
 
         <div className="play-area">
           <aside className="side-panel">
-            {hud.mode === "versus" ? (
+            {isDuelMode(hud.mode) ? (
               <div className="duel-roster" aria-label="双人对战状态">
                 <div
                   className={`duel-player player-one ${hud.player1Alive ? "" : "eliminated"}`}
                 >
                   <span className="duel-dot" aria-hidden="true" />
                   <div>
-                    <small>P1 · WASD</small>
+                    <small>
+                      P1 · {hud.mode === "online" ? "房主" : "WASD"}
+                    </small>
                     <strong>{hud.player1Alive ? "准备战斗" : "已淘汰"}</strong>
                   </div>
                 </div>
@@ -1618,7 +1988,9 @@ export default function Home() {
                 >
                   <span className="duel-dot" aria-hidden="true" />
                   <div>
-                    <small>P2 · 方向键</small>
+                    <small>
+                      P2 · {hud.mode === "online" ? "玩家 2" : "方向键"}
+                    </small>
                     <strong>{hud.player2Alive ? "准备战斗" : "已淘汰"}</strong>
                   </div>
                 </div>
@@ -1649,18 +2021,20 @@ export default function Home() {
                 </div>
               </>
             )}
-            {hud.mode === "versus" ? (
+            {isDuelMode(hud.mode) ? (
               <div className="versus-controls">
                 <div>
                   <span>P1 放泡泡</span>
                   <strong>
-                    <kbd>F</kbd> {hud.player1Bombs}/{hud.bubbles}
+                    <kbd>{hud.mode === "online" ? "SPACE" : "F"}</kbd>{" "}
+                    {hud.player1Bombs}/{hud.bubbles}
                   </strong>
                 </div>
                 <div>
                   <span>P2 放泡泡</span>
                   <strong>
-                    <kbd>ENTER</kbd> {hud.player2Bombs}/{hud.bubbles}
+                    <kbd>{hud.mode === "online" ? "SPACE" : "ENTER"}</kbd>{" "}
+                    {hud.player2Bombs}/{hud.bubbles}
                   </strong>
                 </div>
               </div>
@@ -1702,8 +2076,16 @@ export default function Home() {
               </>
             ) : (
               <div className="tip versus-tip">
-                <span>对战规则</span>
-                公平属性 · 禁用随机道具 · 水花可伤到自己
+                <span>{hud.mode === "online" ? "联机状态" : "对战规则"}</span>
+                {hud.mode === "online"
+                  ? `${network.roomCode || "尚未加入房间"} · ${
+                      network.status === "playing"
+                        ? "同步正常"
+                        : network.status === "disconnected"
+                          ? "等待重连"
+                          : "准备中"
+                    }`
+                  : "公平属性 · 禁用随机道具 · 水花可伤到自己"}
               </div>
             )}
           </aside>
@@ -1725,21 +2107,24 @@ export default function Home() {
               )}
             </div>
 
-            {hud.status !== "playing" && (
+            {showOverlay && (
               <div className="overlay">
                 <div className="overlay-card">
                   <div className="overlay-kicker">
                     {hud.status === "ready"
-                      ? hud.mode === "versus"
-                        ? `${hud.mapName} · LOCAL VERSUS`
-                        : `${hud.mapName} · DISTRICT 01`
+                      ? hud.mode === "online"
+                        ? `${hud.mapName} · ONLINE ROOM`
+                        : hud.mode === "versus"
+                          ? `${hud.mapName} · LOCAL VERSUS`
+                          : `${hud.mapName} · DISTRICT 01`
                       : hud.status === "levelComplete"
                         ? `${hud.mapName} · DISTRICT ${String(hud.level).padStart(2, "0")} CLEAR`
                         : "TRY ANOTHER ROUTE"}
                   </div>
                   <h2>{overlayTitle}</h2>
                   <p>{overlayCopy}</p>
-                  {hud.status !== "levelComplete" && (
+                  {hud.status !== "levelComplete" &&
+                    (hud.mode !== "online" || network.status === "idle") && (
                     <div className="mode-selector" aria-label="选择游戏模式">
                       <button
                         type="button"
@@ -1755,26 +2140,96 @@ export default function Home() {
                       >
                         双人对战
                       </button>
+                      <button
+                        type="button"
+                        aria-pressed={selectedMode === "online"}
+                        onClick={() => selectMode("online")}
+                      >
+                        在线房间
+                      </button>
                     </div>
                   )}
-                  <button
-                    type="button"
-                    className="start-button"
-                    onClick={
-                      hud.status === "levelComplete" ? nextLevel : resetGame
-                    }
-                  >
-                    {hud.status === "ready"
-                      ? hud.mode === "versus"
-                        ? "开始对战"
-                        : "进入街区"
-                      : hud.status === "levelComplete"
-                        ? "下一街区"
-                        : "重新开战"}
-                    <span aria-hidden="true">→</span>
-                  </button>
+                  {hud.mode === "online" && (
+                    <div className="online-room-panel">
+                      {network.token ? (
+                        <>
+                          <div className="room-code" aria-label="当前房间号">
+                            <span>房间号</span>
+                            <strong>{network.roomCode}</strong>
+                          </div>
+                          <button
+                            type="button"
+                            className="room-secondary"
+                            onClick={leaveOnlineRoom}
+                          >
+                            退出房间
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            value={roomInput}
+                            onChange={(event) =>
+                              setRoomInput(
+                                event.target.value
+                                  .toUpperCase()
+                                  .replace(/[^A-Z2-9]/g, "")
+                                  .slice(0, 5),
+                              )
+                            }
+                            maxLength={5}
+                            placeholder="输入 5 位房间号"
+                            aria-label="房间号"
+                          />
+                          <button
+                            type="button"
+                            className="room-secondary"
+                            onClick={joinOnlineRoom}
+                            disabled={network.status === "connecting"}
+                          >
+                            加入房间
+                          </button>
+                          <button
+                            type="button"
+                            className="room-primary"
+                            onClick={createOnlineRoom}
+                            disabled={network.status === "connecting"}
+                          >
+                            创建房间
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {(hud.mode !== "online" ||
+                    (hud.status === "gameOver" &&
+                      network.role === "host")) && (
+                    <button
+                      type="button"
+                      className="start-button"
+                      onClick={
+                        hud.status === "levelComplete" ? nextLevel : resetGame
+                      }
+                    >
+                      {hud.status === "ready"
+                        ? hud.mode === "versus"
+                          ? "开始对战"
+                          : "进入街区"
+                        : hud.status === "levelComplete"
+                          ? "下一街区"
+                          : "重新开战"}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  )}
                   <div className="key-hint">
-                    {hud.mode === "versus" ? (
+                    {hud.mode === "online" ? (
+                      <>
+                        <kbd>WASD / 方向键</kbd>
+                        移动
+                        <kbd>SPACE</kbd>
+                        放泡泡
+                      </>
+                    ) : hud.mode === "versus" ? (
                       <>
                         <kbd>P1 · WASD + F</kbd>
                         <kbd>P2 · 方向键 + ENTER</kbd>
@@ -1856,9 +2311,9 @@ export default function Home() {
             <button
               type="button"
               className="bubble-button"
-              onPointerDown={() => placeBomb(1)}
+              onPointerDown={placeLocalBomb}
               aria-label={
-                hud.mode === "versus" ? "P1 放置泡泡" : "放置泡泡"
+                isDuelMode(hud.mode) ? "当前玩家放置泡泡" : "放置泡泡"
               }
             >
               <span />
@@ -1873,13 +2328,17 @@ export default function Home() {
             {hud.mapName}正在营业
           </div>
           <p>
-            {hud.mode === "versus"
-              ? "P1：WASD + F · P2：方向键 + Enter"
+            {hud.mode === "online"
+              ? "双方：WASD / 方向键移动 · 空格键放泡泡"
+              : hud.mode === "versus"
+                ? "P1：WASD + F · P2：方向键 + Enter"
               : "方向键 / WASD 移动 · 空格键放泡泡 · E 键遥控起爆"}
           </p>
           <strong>
-            {hud.mode === "versus"
-              ? "本地双人 · 最后存活者获胜"
+            {hud.mode === "online"
+              ? `在线房间 ${network.roomCode || "未连接"}`
+              : hud.mode === "versus"
+                ? "本地双人 · 最后存活者获胜"
               : "最佳路线：先留退路"}
           </strong>
         </footer>

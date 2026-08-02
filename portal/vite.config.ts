@@ -14,6 +14,10 @@ import {
   MULTIPLAYER_BLACKJACK_INTERNAL_PORT,
   multiplayerBlackjackServer,
 } from "./lan/multiplayer-blackjack-server";
+import {
+  BUBBLE_BATTLE_INTERNAL_PORT,
+  bubbleBattleServer,
+} from "./lan/bubble-battle-server";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -60,6 +64,13 @@ export default defineConfig(async () => {
           rewrite: (requestPath) =>
             requestPath.replace(/^\/multiplayer-blackjack-service/, "") || "/",
         },
+        "/bubble-battle-service": {
+          target: `http://127.0.0.1:${BUBBLE_BATTLE_INTERNAL_PORT}`,
+          changeOrigin: true,
+          ws: false,
+          rewrite: (requestPath) =>
+            requestPath.replace(/^\/bubble-battle-service/, "") || "/",
+        },
       },
       watch: isCodexSeatbeltSandbox
         ? {
@@ -75,6 +86,7 @@ export default defineConfig(async () => {
       tosiosLanServer(),
       microRacingLanServer(),
       multiplayerBlackjackServer(),
+      bubbleBattleServer(),
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

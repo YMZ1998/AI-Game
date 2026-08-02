@@ -17,6 +17,12 @@ const gamesRoot = path.join(workspaceRoot, "games");
 const outputRoot = path.join(portalRoot, "public", "embedded");
 const shellRoot = path.join(portalRoot, "public", "play");
 const skipBuild = process.env.PLAYROOM_SKIP_GAME_BUILD === "1";
+const requestedGames = new Set(
+  (process.env.PLAYROOM_GAME ?? "")
+    .split(",")
+    .map((slug) => slug.trim())
+    .filter(Boolean),
+);
 
 const gameCatalog = [
   { slug: "gold-miner", number: "01", title: "黄金矿工", english: "GOLD RUSH" },
@@ -418,7 +424,11 @@ function renderGameShell({ slug, number, title, english, launchQuery }) {
 await mkdir(outputRoot, { recursive: true });
 await mkdir(shellRoot, { recursive: true });
 
-for (const game of gameCatalog) {
+const selectedGames = requestedGames.size
+  ? gameCatalog.filter((game) => requestedGames.has(game.slug))
+  : gameCatalog;
+
+for (const game of selectedGames) {
   const { slug } = game;
   const gameRoot = path.join(gamesRoot, slug);
   const destination = path.join(outputRoot, slug);
@@ -527,4 +537,4 @@ for (const game of gameCatalog) {
   console.log(`[games] ${slug}: embedded`);
 }
 
-console.log(`[games] synced ${gameCatalog.length} games into PLAYROOM`);
+console.log(`[games] synced ${selectedGames.length} games into PLAYROOM`);
