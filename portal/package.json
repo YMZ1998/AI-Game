@@ -15,6 +15,7 @@
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "test:lan": "node scripts/smoke-lan.mjs",
     "test:chat": "node scripts/smoke-chat.mjs",
+    "test:realtime": "node scripts/smoke-realtime-games.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern work",
     "db:generate": "drizzle-kit generate"
   },
